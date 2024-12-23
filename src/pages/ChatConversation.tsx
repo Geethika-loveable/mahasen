@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,30 @@ const ChatConversation = () => {
     },
     enabled: !!id,
   });
+
+  useEffect(() => {
+    if (!id) return;
+
+    const subscription = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${id}`
+        },
+        (payload) => {
+          refetchMessages();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [id, refetchMessages]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !id) return;
