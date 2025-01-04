@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { getOllamaResponse } from './ollama.ts';
+import { generateAIResponse } from './ollama.ts';
 import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 
@@ -184,7 +184,7 @@ Please use the following information to answer the question. If the information 
 ${context || 'No specific information found in the knowledge base. Please provide a general response.'}`;
 
       // Get AI response using context from knowledge base and AI settings
-      const aiResponse = await getOllamaResponse(userMessage, aiContext, OLLAMA_BASE_URL);
+      const aiResponse = await generateAIResponse(userMessage);
       console.log('AI Response:', aiResponse);
       
       // Send response back via WhatsApp
