@@ -24,7 +24,8 @@ export async function generateAIResponse(input: string,context: string = ''): Pr
     if (!aiSettings) {
       console.error('No AI settings found');
       // Use default Gemini model if no settings found. 
-      return await generateGeminiResponse(input,context);
+      //return await generateGeminiResponse(input,context);
+      return await generateGemini2FlashResponse(input,context);
       //return await generateOllamaResponse(input,context);
     }
 
@@ -44,7 +45,7 @@ export async function generateAIResponse(input: string,context: string = ''): Pr
 
 async function generateOllamaResponse(input: string,context: string = ''): Promise<string> {
   try {
-    const systemPrompt = `You are the official Customer Care AI assistant of iCET with access to a knowledge base. Give concise answers. \n ${context} \n 
+    const systemPrompt = `You are the official Customer Care AI assistant of Institute of Computer Engineering Technology (iCET) with access to a knowledge base. Give concise answers. \n ${context} \n 
     Please provide a general response if no specific information to the user question is available.`;
 
     console.log('Generating Ollama response for input:', input);
@@ -102,6 +103,54 @@ async function generateGeminiResponse(input: string, context: string = ''): Prom
             topK: 64,
             topP: 0.95,
             maxOutputTokens: 4096,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Gemini response received');
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('Error generating Gemini response:', error);
+    throw error;
+  }
+}
+
+async function generateGemini2FlashResponse(input: string, context: string = ''): Promise<string> {
+  try {
+    const systemPrompt = `You are the official Customer Care AI of Institute of Computer Engineering Technology - iCET with access to a knowledge base. Always try to Give concise answers. Help with whatever the user asks.\n ${context} \n 
+    Please provide a general response if no specific information to the user question is available. give the answer in a well structured, formatted way suitable for whatsapp. Don't use more than 1 "*" to bold. "- " for a bullet point for lists. Use emojis for better understanding.`;
+
+    console.log('Generating Gemini response for input:', input);
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            topK: 64,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+            responseMimeType: "text/plain"
           },
         }),
       }
