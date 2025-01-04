@@ -23,7 +23,8 @@ export async function generateAIResponse(input: string): Promise<string> {
 
     if (!aiSettings) {
       console.error('No AI settings found');
-      // Use default model if no settings found
+      // Use default Gemini model if no settings found. 
+      //return await generateGeminiResponse(input);
       return await generateOllamaResponse(input);
     }
 
