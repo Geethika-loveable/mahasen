@@ -1,58 +1,103 @@
-export async function getOllamaResponse(prompt: string, context: string = '', OLLAMA_BASE_URL: string): Promise<string> {
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const OLLAMA_BASE_URL = Deno.env.get('OLLAMA_BASE_URL')!;
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export async function generateAIResponse(input: string): Promise<string> {
   try {
-    if (!OLLAMA_BASE_URL) {
-      throw new Error('OLLAMA_BASE_URL is not defined');
+    // Get current AI model setting
+    const { data: aiSettings, error: settingsError } = await supabase
+      .from('ai_settings')
+      .select('model_name')
+      .single();
+
+    if (settingsError) {
+      console.error('Error fetching AI settings:', settingsError);
+      throw new Error('Failed to fetch AI settings');
     }
 
-    // Ensure the base URL is properly formatted
-    const baseUrl = OLLAMA_BASE_URL.endsWith('/') ? OLLAMA_BASE_URL : `${OLLAMA_BASE_URL}/`;
-    const ollamaUrl = new URL('api/generate', baseUrl).toString();
-    
-    console.log('Using Ollama base URL:', OLLAMA_BASE_URL);
-    console.log('Full Ollama URL:', ollamaUrl);
+    const modelName = aiSettings?.model_name || 'llama3.2:latest';
 
-    const systemPrompt = context ? 
-      `You are a helpful AI assistant with access to a knowledge base. ${context}` :
-      'Please provide a general response if no specific information is available.';
+    if (modelName === 'llama3.2:latest') {
+      return await generateOllamaResponse(input);
+    } else {
+      return await generateGeminiResponse(input);
+    }
+  } catch (error) {
+    console.error('Error generating AI response:', error);
+    throw error;
+  }
+}
 
-    console.log('Sending request to Ollama with prompt:', prompt);
-
-    const response = await fetch(ollamaUrl, {
+async function generateOllamaResponse(input: string): Promise<string> {
+  try {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        model: "llama3.2:latest",
-        prompt: `${systemPrompt}\n\nUser Question: ${prompt}\n\nPlease provide your response:`,
-        stream: false
-      })
+        model: 'llama3.2:latest',
+        prompt: input,
+        stream: false,
+      }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Ollama API error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
-      });
-      throw new Error(`Ollama API responded with status: ${response.status}. Body: ${errorText}`);
+      throw new Error(`Ollama API error: ${response.statusText}`);
     }
 
-    const text = await response.text();
-    console.log('Raw Ollama response:', text);
-
-    try {
-      const data = JSON.parse(text);
-      if (!data.response) {
-        console.error('Unexpected Ollama response format:', data);
-        throw new Error('Invalid response format from Ollama');
-      }
-      return data.response;
-    } catch (parseError) {
-      console.error('Error parsing Ollama response:', parseError);
-      throw new Error('Invalid JSON response from Ollama');
-    }
+    const data = await response.json();
+    return data.response;
   } catch (error) {
-    console.error('Error getting Ollama response:', error);
-    return "I apologize, but I'm having trouble processing your request right now. Please try again later.";
+    console.error('Error generating Ollama response:', error);
+    throw error;
+  }
+}
+
+async function generateGeminiResponse(input: string): Promise<string> {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [
+                {
+                  text: input,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            topK: 64,
+            topP: 0.95,
+            maxOutputTokens: 4096,
+            responseMimeType: 'application/json',
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('Error generating Gemini response:', error);
+    throw error;
   }
 }
