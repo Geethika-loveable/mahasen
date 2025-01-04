@@ -22,14 +22,14 @@ const AISettings = () => {
   const [contextMemoryLength, setContextMemoryLength] = useState<string>("2");
   const [conversationTimeout, setConversationTimeout] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [modelName, setModelName] = useState("llama3.2:latest");
+  const [modelName, setModelName] = useState<"llama3.2:latest" | "gemini-exp-1206">("llama3.2:latest");
   const [isModelChangeDisabled, setIsModelChangeDisabled] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           navigate("/login");
           return;
         }
@@ -62,9 +62,20 @@ const AISettings = () => {
     };
 
     loadSettings();
+
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/login");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [toast, navigate]);
 
-  const handleModelChange = (value: string) => {
+  const handleModelChange = (value: "llama3.2:latest" | "gemini-exp-1206") => {
     setModelName(value);
     setIsModelChangeDisabled(true);
     setTimeout(() => {
