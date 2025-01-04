@@ -22,10 +22,18 @@ const AISettings = () => {
   const [contextMemoryLength, setContextMemoryLength] = useState<string>("2");
   const [conversationTimeout, setConversationTimeout] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [modelName, setModelName] = useState("llama3.2:latest");
+  const [isModelChangeDisabled, setIsModelChangeDisabled] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          navigate("/login");
+          return;
+        }
+
         const { data, error } = await supabase
           .from('ai_settings')
           .select('*')
@@ -41,6 +49,7 @@ const AISettings = () => {
           setBehaviour(data.behaviour || "");
           setContextMemoryLength(data.context_memory_length?.toString() || "2");
           setConversationTimeout(data.conversation_timeout_hours || 1);
+          setModelName(data.model_name || "llama3.2:latest");
         }
       } catch (error) {
         console.error('Error loading AI settings:', error);
@@ -53,7 +62,15 @@ const AISettings = () => {
     };
 
     loadSettings();
-  }, [toast]);
+  }, [toast, navigate]);
+
+  const handleModelChange = (value: string) => {
+    setModelName(value);
+    setIsModelChangeDisabled(true);
+    setTimeout(() => {
+      setIsModelChangeDisabled(false);
+    }, 120000); // 2 minutes
+  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -76,6 +93,7 @@ const AISettings = () => {
           behaviour,
           context_memory_length: memoryLength,
           conversation_timeout_hours: conversationTimeout,
+          model_name: modelName,
           updated_at: new Date().toISOString()
         });
 
@@ -142,8 +160,11 @@ const AISettings = () => {
           <AdvancedSettings
             contextMemoryLength={contextMemoryLength}
             conversationTimeout={conversationTimeout}
+            modelName={modelName}
             onContextMemoryChange={setContextMemoryLength}
             onTimeoutChange={setConversationTimeout}
+            onModelChange={handleModelChange}
+            isModelChangeDisabled={isModelChangeDisabled}
           />
 
           <div className="flex justify-end space-x-4 pt-4">
