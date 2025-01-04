@@ -9,18 +9,26 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export async function generateAIResponse(input: string): Promise<string> {
   try {
-    // Get current AI model setting
+    // Get current AI model setting with error handling
     const { data: aiSettings, error: settingsError } = await supabase
       .from('ai_settings')
-      .select('model_name')
-      .single();
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle();
 
     if (settingsError) {
       console.error('Error fetching AI settings:', settingsError);
       throw new Error('Failed to fetch AI settings');
     }
 
-    const modelName = aiSettings?.model_name || 'llama3.2:latest';
+    if (!aiSettings) {
+      console.error('No AI settings found');
+      // Use default model if no settings found
+      return await generateOllamaResponse(input);
+    }
+
+    const modelName = aiSettings.model_name;
+    console.log('Using AI model:', modelName);
 
     if (modelName === 'llama3.2:latest') {
       return await generateOllamaResponse(input);
@@ -35,6 +43,7 @@ export async function generateAIResponse(input: string): Promise<string> {
 
 async function generateOllamaResponse(input: string): Promise<string> {
   try {
+    console.log('Generating Ollama response for input:', input);
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
       headers: {
@@ -52,6 +61,7 @@ async function generateOllamaResponse(input: string): Promise<string> {
     }
 
     const data = await response.json();
+    console.log('Ollama response received');
     return data.response;
   } catch (error) {
     console.error('Error generating Ollama response:', error);
@@ -61,6 +71,7 @@ async function generateOllamaResponse(input: string): Promise<string> {
 
 async function generateGeminiResponse(input: string): Promise<string> {
   try {
+    console.log('Generating Gemini response for input:', input);
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -84,7 +95,6 @@ async function generateGeminiResponse(input: string): Promise<string> {
             topK: 64,
             topP: 0.95,
             maxOutputTokens: 4096,
-            responseMimeType: 'application/json',
           },
         }),
       }
@@ -95,6 +105,7 @@ async function generateGeminiResponse(input: string): Promise<string> {
     }
 
     const data = await response.json();
+    console.log('Gemini response received');
     return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error('Error generating Gemini response:', error);
