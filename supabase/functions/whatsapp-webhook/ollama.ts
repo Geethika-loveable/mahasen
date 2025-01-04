@@ -7,7 +7,7 @@ const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-export async function generateAIResponse(input: string): Promise<string> {
+export async function generateAIResponse(input: string,context: string = ''): Promise<string> {
   try {
     // Get current AI model setting with error handling
     const { data: aiSettings, error: settingsError } = await supabase
@@ -25,7 +25,7 @@ export async function generateAIResponse(input: string): Promise<string> {
       console.error('No AI settings found');
       // Use default Gemini model if no settings found. 
       //return await generateGeminiResponse(input);
-      return await generateOllamaResponse(input);
+      return await generateOllamaResponse(input,context);
     }
 
     const modelName = aiSettings.model_name;
@@ -42,7 +42,7 @@ export async function generateAIResponse(input: string): Promise<string> {
   }
 }
 
-async function generateOllamaResponse(input: string): Promise<string> {
+async function generateOllamaResponse(input: string,context: string = ''): Promise<string> {
   try {
     console.log('Generating Ollama response for input:', input);
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {

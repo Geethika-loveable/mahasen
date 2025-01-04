@@ -184,7 +184,7 @@ Please use the following information to answer the question. If the information 
 ${context || 'No specific information found in the knowledge base. Please provide a general response.'}`;
 
       // Get AI response using context from knowledge base and AI settings
-      const aiResponse = await generateAIResponse(userMessage);
+      const aiResponse = await generateAIResponse(userMessage,aiContext);
       console.log('AI Response:', aiResponse);
       
       // Send response back via WhatsApp
