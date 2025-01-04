@@ -9,14 +9,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export async function generateAIResponse(input: string): Promise<string> {
   try {
-    console.log('Fetching AI settings...');
-    
     // Get current AI model setting with error handling
     const { data: aiSettings, error: settingsError } = await supabase
       .from('ai_settings')
       .select('*')
       .eq('id', 1)
-      .single();
+      .maybeSingle();
 
     if (settingsError) {
       console.error('Error fetching AI settings:', settingsError);
@@ -24,26 +22,21 @@ export async function generateAIResponse(input: string): Promise<string> {
     }
 
     if (!aiSettings) {
-      console.error('No AI settings found, using default Ollama model');
+      console.error('No AI settings found');
+      // Use default model if no settings found
       return await generateOllamaResponse(input);
     }
 
-    console.log('AI Settings found:', aiSettings);
-    console.log('Using AI model:', aiSettings.model_name);
+    const modelName = aiSettings.model_name;
+    console.log('Using AI model:', modelName);
 
-    // Explicitly check the model name and use the appropriate service
-    if (aiSettings.model_name === 'llama3.2:latest') {
-      console.log('Using Ollama for response generation');
+    if (modelName === 'llama3.2:latest') {
       return await generateOllamaResponse(input);
-    } else if (aiSettings.model_name === 'gemini-exp-1206') {
-      console.log('Using Gemini for response generation');
-      return await generateGeminiResponse(input);
     } else {
-      console.warn('Unknown model, falling back to Ollama');
-      return await generateOllamaResponse(input);
+      return await generateGeminiResponse(input);
     }
   } catch (error) {
-    console.error('Error in generateAIResponse:', error);
+    console.error('Error generating AI response:', error);
     throw error;
   }
 }
@@ -68,7 +61,7 @@ async function generateOllamaResponse(input: string): Promise<string> {
     }
 
     const data = await response.json();
-    console.log('Ollama response received successfully');
+    console.log('Ollama response received');
     return data.response;
   } catch (error) {
     console.error('Error generating Ollama response:', error);
@@ -112,12 +105,7 @@ async function generateGeminiResponse(input: string): Promise<string> {
     }
 
     const data = await response.json();
-    console.log('Gemini response received successfully');
-    
-    if (!data.candidates || !data.candidates[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid response format from Gemini API');
-    }
-    
+    console.log('Gemini response received');
     return data.candidates[0].content.parts[0].text;
   } catch (error) {
     console.error('Error generating Gemini response:', error);
