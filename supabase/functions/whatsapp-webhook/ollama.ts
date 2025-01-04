@@ -24,8 +24,8 @@ export async function generateAIResponse(input: string,context: string = ''): Pr
     if (!aiSettings) {
       console.error('No AI settings found');
       // Use default Gemini model if no settings found. 
-      //return await generateGeminiResponse(input);
-      return await generateOllamaResponse(input,context);
+      return await generateGeminiResponse(input,context);
+      //return await generateOllamaResponse(input,context);
     }
 
     const modelName = aiSettings.model_name;
@@ -44,6 +44,9 @@ export async function generateAIResponse(input: string,context: string = ''): Pr
 
 async function generateOllamaResponse(input: string,context: string = ''): Promise<string> {
   try {
+    const systemPrompt = `You are the official Customer Care AI assistant of iCET with access to a knowledge base. Give concise answers. \n ${context} \n 
+    Please provide a general response if no specific information to the user question is available.`;
+
     console.log('Generating Ollama response for input:', input);
     const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
@@ -52,7 +55,7 @@ async function generateOllamaResponse(input: string,context: string = ''): Promi
       },
       body: JSON.stringify({
         model: 'llama3.2:latest',
-        prompt: input,
+        prompt: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
         stream: false,
       }),
     });
@@ -70,8 +73,11 @@ async function generateOllamaResponse(input: string,context: string = ''): Promi
   }
 }
 
-async function generateGeminiResponse(input: string): Promise<string> {
+async function generateGeminiResponse(input: string, context: string = ''): Promise<string> {
   try {
+    const systemPrompt = `You are the official Customer Care AI assistant of iCET with access to a knowledge base. Give concise answers always. \n ${context} \n 
+    Please provide a general response if no specific information to the user question is available.`;
+
     console.log('Generating Gemini response for input:', input);
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent?key=${GEMINI_API_KEY}`,
@@ -86,7 +92,7 @@ async function generateGeminiResponse(input: string): Promise<string> {
               role: 'user',
               parts: [
                 {
-                  text: input,
+                  text: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
                 },
               ],
             },
