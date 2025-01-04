@@ -2,21 +2,28 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdvancedSettingsProps {
   contextMemoryLength: string;
   conversationTimeout: number;
+  modelName: string;
   onContextMemoryChange: (value: string) => void;
   onTimeoutChange: (value: number) => void;
+  onModelChange: (value: string) => void;
+  isModelChangeDisabled: boolean;
 }
 
 export const AdvancedSettings = ({
   contextMemoryLength,
   conversationTimeout,
+  modelName,
   onContextMemoryChange,
   onTimeoutChange,
+  onModelChange,
+  isModelChangeDisabled,
 }: AdvancedSettingsProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
@@ -44,6 +51,18 @@ export const AdvancedSettings = ({
     onTimeoutChange(numValue);
   };
 
+  const handleModelChange = (value: string) => {
+    if (isModelChangeDisabled) {
+      toast({
+        variant: "destructive",
+        title: "Model change not allowed",
+        description: "Please wait 2 minutes before changing the model again.",
+      });
+      return;
+    }
+    onModelChange(value);
+  };
+
   return (
     <Collapsible
       open={isOpen}
@@ -58,36 +77,60 @@ export const AdvancedSettings = ({
       </CollapsibleTrigger>
       <CollapsibleContent className="p-4 pt-0">
         <div className="space-y-4">
-          <label className="text-sm font-medium">Context Memory Length</label>
-          <RadioGroup
-            value={contextMemoryLength}
-            onValueChange={onContextMemoryChange}
-            className="flex flex-wrap gap-4"
-          >
-            {["1", "2", "3", "5", "Disable"].map((value) => (
-              <div key={value} className="flex items-center space-x-2">
-                <RadioGroupItem value={value} id={`memory-${value}`} />
-                <Label htmlFor={`memory-${value}`}>{value}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">AI Model</label>
+            <Select
+              value={modelName}
+              onValueChange={handleModelChange}
+              disabled={isModelChangeDisabled}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select AI model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="llama3.2:latest">llama3.2:latest</SelectItem>
+                <SelectItem value="gemini-exp-1206">gemini-exp-1206</SelectItem>
+              </SelectContent>
+            </Select>
+            {isModelChangeDisabled && (
+              <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                Model change is temporarily disabled. Please wait 2 minutes.
+              </p>
+            )}
+          </div>
 
-        <div className="space-y-2 mt-4">
-          <label className="text-sm font-medium">
-            New Conversation Timeout (hours)
-          </label>
-          <Input
-            type="number"
-            min={1}
-            max={6}
-            value={conversationTimeout}
-            onChange={(e) => handleTimeoutChange(e.target.value)}
-            className="w-full"
-          />
-          <p className="text-xs text-slate-500">
-            Set between 1-6 hours
-          </p>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Context Memory Length</label>
+            <RadioGroup
+              value={contextMemoryLength}
+              onValueChange={onContextMemoryChange}
+              className="flex flex-wrap gap-4"
+            >
+              {["1", "2", "3", "5", "Disable"].map((value) => (
+                <div key={value} className="flex items-center space-x-2">
+                  <RadioGroupItem value={value} id={`memory-${value}`} />
+                  <Label htmlFor={`memory-${value}`}>{value}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              New Conversation Timeout (hours)
+            </label>
+            <Input
+              type="number"
+              min={1}
+              max={6}
+              value={conversationTimeout}
+              onChange={(e) => handleTimeoutChange(e.target.value)}
+              className="w-full"
+            />
+            <p className="text-xs text-slate-500">
+              Set between 1-6 hours
+            </p>
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>

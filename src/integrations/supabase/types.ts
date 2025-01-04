@@ -16,6 +16,7 @@ export type Database = {
           conversation_timeout_hours: number | null
           created_at: string
           id: number
+          model_name: Database["public"]["Enums"]["ai_model"]
           tone: Database["public"]["Enums"]["ai_tone"]
           updated_at: string
         }
@@ -25,6 +26,7 @@ export type Database = {
           conversation_timeout_hours?: number | null
           created_at?: string
           id?: number
+          model_name?: Database["public"]["Enums"]["ai_model"]
           tone?: Database["public"]["Enums"]["ai_tone"]
           updated_at?: string
         }
@@ -34,6 +36,7 @@ export type Database = {
           conversation_timeout_hours?: number | null
           created_at?: string
           id?: number
+          model_name?: Database["public"]["Enums"]["ai_model"]
           tone?: Database["public"]["Enums"]["ai_tone"]
           updated_at?: string
         }
@@ -354,6 +357,7 @@ export type Database = {
       }
     }
     Enums: {
+      ai_model: "llama3.2:latest" | "gemini-exp-1206"
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
       message_status: "sent" | "received"
       platform_type: "whatsapp" | "facebook" | "instagram"

@@ -1,13 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { getOllamaResponse } from './ollama.ts';
+import { getAIResponse } from './ollama.ts';
 import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 
 const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
 const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
 const OLLAMA_BASE_URL = Deno.env.get('OLLAMA_BASE_URL')!;
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,23 +32,24 @@ serve(async (req) => {
     let finalMessage = message;
 
     if (useAI) {
-      // Construct a more explicit prompt that instructs the AI how to use the context
-      const prompt = `You are a helpful AI assistant with access to a knowledge base. 
-${context}
+      // Get current AI model from settings
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
-User Question: ${message}
+      const { data: settings, error: settingsError } = await supabase
+        .from('ai_settings')
+        .select('model_name')
+        .single();
 
-Instructions:
-1. If the context contains relevant information, use it to provide a detailed and accurate response.
-2. If the context is not relevant to the question, provide a general response and mention that the specific information is not in your knowledge base.
-3. Always maintain a helpful and professional tone.
-4. Be direct and concise in your response.
+      if (settingsError) {
+        throw settingsError;
+      }
 
-Please provide your response:`;
+      const currentModel = settings?.model_name || 'llama3.2:latest';
+      console.log('Using AI model:', currentModel);
 
-      console.log('Sending prompt to Ollama:', prompt);
-
-      finalMessage = await getOllamaResponse(prompt, OLLAMA_BASE_URL);
+      finalMessage = await getAIResponse(message, currentModel, OLLAMA_BASE_URL, GEMINI_API_KEY, context);
       console.log('AI Response:', finalMessage);
     }
 
