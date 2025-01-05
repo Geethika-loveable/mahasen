@@ -4,6 +4,7 @@ import { generateAIResponse } from './ollama.ts';
 import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 import { getAISettings } from './ai-settings.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,6 +12,11 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Initialize Supabase client
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -61,7 +67,7 @@ serve(async (req) => {
       const timeoutHours = aiSettings.conversation_timeout_hours || 1;
 
       // Get recent conversation history
-      const conversationHistory = await getRecentConversationHistory(userId, timeoutHours);
+      const conversationHistory = await getRecentConversationHistory(userId, timeoutHours, supabase);
       console.log('Retrieved conversation history:', conversationHistory);
 
       // Generate AI response using the selected model
@@ -74,7 +80,7 @@ serve(async (req) => {
       await sendWhatsAppMessage(userId, aiResponse, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
 
       // Store the conversation
-      await storeConversation(userId, userName, userMessage, aiResponse);
+      await storeConversation(supabase, userId, userName, userMessage, aiResponse);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -94,7 +100,7 @@ serve(async (req) => {
   });
 });
 
-async function getRecentConversationHistory(userId: string, timeoutHours: number): Promise<string> {
+async function getRecentConversationHistory(userId: string, timeoutHours: number, supabase: any): Promise<string> {
   try {
     // Get timeout setting from AI settings
     const timeoutAgo = new Date(Date.now() - (timeoutHours * 60 * 60 * 1000)).toISOString();
@@ -121,8 +127,8 @@ async function getRecentConversationHistory(userId: string, timeoutHours: number
       .select('content, sender_name, created_at')
       .eq('conversation_id', conversationId)
       .gt('created_at', timeoutAgo)
-      .order('created_at', { ascending: false })
-      .limit(4);
+      .order('created_at', { ascending: true })  // Changed to ascending to get messages in chronological order
+      .limit(4);  // Limit to last 4 messages to avoid duplicate responses
 
     if (msgError) {
       console.error('Error fetching messages:', msgError);
@@ -136,7 +142,6 @@ async function getRecentConversationHistory(userId: string, timeoutHours: number
 
     // Format the conversation history
     const history = messages
-      .reverse()
       .map(msg => `${msg.sender_name}: ${msg.content}`)
       .join('\n');
 
