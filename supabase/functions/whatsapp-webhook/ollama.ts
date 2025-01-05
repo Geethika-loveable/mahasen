@@ -1,41 +1,18 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { getAISettings } from './ai-settings.ts';
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const OLLAMA_BASE_URL = Deno.env.get('OLLAMA_BASE_URL')!;
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-export async function generateAIResponse(input: string,context: string = ''): Promise<string> {
+export async function generateAIResponse(input: string, context: string = ''): Promise<string> {
   try {
-    // Get current AI model setting with error handling
-    const { data: aiSettings, error: settingsError } = await supabase
-      .from('ai_settings')
-      .select('*')
-      .eq('id', 1)
-      .maybeSingle();
+    const aiSettings = await getAISettings();
+    console.log('Using AI model:', aiSettings.model_name);
 
-    if (settingsError) {
-      console.error('Error fetching AI settings:', settingsError);
-      throw new Error('Failed to fetch AI settings');
-    }
-
-    if (!aiSettings) {
-      console.error('No AI settings found');
-      // Use default Gemini model if no settings found. 
-      //return await generateGeminiResponse(input,context);
-      return await generateGeminiResponse(input,context);
-      //return await generateOllamaResponse(input,context);
-    }
-
-    const modelName = aiSettings.model_name;
-    console.log('Using AI model:', modelName);
-
-    if (modelName === 'llama3.2:latest') {
-      return await generateOllamaResponse(input);
+    if (aiSettings.model_name === 'gemini-exp-1206') {
+      return await generateGeminiResponse(input, context, aiSettings);
     } else {
-      return await generateGeminiResponse(input);
+      return await generateOllamaResponse(input, context, aiSettings);
     }
   } catch (error) {
     console.error('Error generating AI response:', error);
@@ -43,84 +20,62 @@ export async function generateAIResponse(input: string,context: string = ''): Pr
   }
 }
 
-async function generateOllamaResponse(input: string,context: string = ''): Promise<string> {
-  try {
-    const systemPrompt = `You are the official Customer Care AI assistant of Institute of Computer Engineering Technology (iCET) with access to a knowledge base. Give concise answers. \n ${context} \n 
-    Please provide a general response if no specific information to the user question is available.`;
+async function generateOllamaResponse(input: string, context: string, aiSettings: any): Promise<string> {
+  console.log('Generating Ollama response for input:', input);
+  
+  const systemPrompt = `You are the official Customer Care AI assistant of Institute of Computer Engineering Technology (iCET) with access to a knowledge base. Your tone should be ${aiSettings.tone.toLowerCase()}. ${aiSettings.behaviour ? `Behavior instructions: ${aiSettings.behaviour}` : ''}\n${context}`;
 
-    console.log('Generating Ollama response for input:', input);
-    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama3.2:latest',
-        prompt: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
-        stream: false,
-      }),
-    });
+  const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'llama3.2:latest',
+      prompt: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
+      stream: false,
+    }),
+  });
 
-    if (!response.ok) {
-      throw new Error(`Ollama API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('Ollama response received');
-    return data.response;
-  } catch (error) {
-    console.error('Error generating Ollama response:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`Ollama API error: ${response.statusText}`);
   }
+
+  const data = await response.json();
+  return data.response;
 }
 
+async function generateGeminiResponse(input: string, context: string, aiSettings: any): Promise<string> {
+  console.log('Generating Gemini response for input:', input);
+  
+  const systemPrompt = `You are the official Customer Care AI of Institute of Computer Engineering Technology - iCET with access to a knowledge base. Your tone should be ${aiSettings.tone.toLowerCase()}. ${aiSettings.behaviour ? `Behavior instructions: ${aiSettings.behaviour}` : ''}\n${context}`;
 
-async function generateGeminiResponse(input: string, context: string = ''): Promise<string> {
-  try {
-    const systemPrompt = `You are the official Customer Care AI of Institute of Computer Engineering Technology - iCET with access to a knowledge base. Always try to Give concise answers. Help with whatever the user asks. Please provide a general response if no specific information to the user question is available. Give the answer in a well structured, formatted way suitable for whatsapp. Don't use more than 1 "*" to bold. Use "- " for a bullet point for lists. Use emojis for better understanding. Take knowledge from recent conversations. But do NOT give redundant information just as in the recent conversation, Don't greet twice. Be concise. 
-    Ask a specific question once at the end to get more information and suggest them the best course available.
-    Questions like, "Are you a OL, AL or University student?", "What do you value, Software development, Web development, Artificial Intelligence, Networking, UI/ UX, " are good questions to ask.
-    Knowledge Base:\n\n  ${context}.\n`;
-
-    console.log('Generating Gemini response for input:', input);
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
+          }],
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          topK: 64,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+          responseMimeType: "text/plain"
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            topK: 64,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-            responseMimeType: "text/plain"
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
+      }),
     }
+  );
 
-    const data = await response.json();
-    console.log('Gemini response received');
-    return data.candidates[0].content.parts[0].text;
-  } catch (error) {
-    console.error('Error generating Gemini response:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.statusText}`);
   }
+
+  const data = await response.json();
+  console.log('Gemini response received');
+  return data.candidates[0].content.parts[0].text;
 }
