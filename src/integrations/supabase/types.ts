@@ -357,7 +357,7 @@ export type Database = {
       }
     }
     Enums: {
-      ai_model: "llama3.2:latest" | "gemini-exp-1206"
+      ai_model: "llama3.2:latest" | "gemini-2.0-flash-exp"
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
       message_status: "sent" | "received"
       platform_type: "whatsapp" | "facebook" | "instagram"

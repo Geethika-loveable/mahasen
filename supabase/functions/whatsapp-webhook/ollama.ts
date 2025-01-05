@@ -4,7 +4,7 @@ export async function generateAIResponse(userMessage: string, conversationHistor
   try {
     console.log('Using AI model:', aiSettings.model_name);
 
-    if (aiSettings.model_name === 'gemini-exp-1206') {
+    if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
       return await generateGeminiResponse(userMessage, conversationHistory, aiSettings);
     } else {
       return await generateOllamaResponse(userMessage, conversationHistory, aiSettings);
@@ -20,7 +20,7 @@ async function generateGeminiResponse(userMessage: string, conversationHistory: 
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
   
   try {
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + GEMINI_API_KEY, {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=' + GEMINI_API_KEY, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

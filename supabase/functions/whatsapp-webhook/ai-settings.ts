@@ -7,7 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export interface AISettings {
   tone: string;
   behaviour: string | null;
-  model_name: 'llama3.2:latest' | 'gemini-exp-1206';
+  model_name: 'llama3.2:latest' | 'gemini-2.0-flash-exp';
   context_memory_length: number;
   conversation_timeout_hours: number;
 }

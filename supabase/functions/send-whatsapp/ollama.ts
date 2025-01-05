@@ -2,7 +2,7 @@ export async function getAIResponse(prompt: string, model: string, OLLAMA_BASE_U
   try {
     if (model === 'llama3.2:latest') {
       return getOllamaResponse(prompt, OLLAMA_BASE_URL, context);
-    } else if (model === 'gemini-exp-1206') {
+    } else if (model === 'gemini-2.0-flash-exp') {
       return getGeminiResponse(prompt, GEMINI_API_KEY, context);
     } else {
       throw new Error('Invalid model specified');
@@ -73,7 +73,7 @@ async function getGeminiResponse(prompt: string, GEMINI_API_KEY: string, context
     const fullPrompt = `${systemPrompt}\n\nUser Question: ${prompt}`;
     
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: {
@@ -91,10 +91,10 @@ async function getGeminiResponse(prompt: string, GEMINI_API_KEY: string, context
             }
           ],
           generationConfig: {
-            temperature: 0.4,
+            temperature: 0.2,
             topK: 64,
             topP: 0.95,
-            maxOutputTokens: 4096,
+            maxOutputTokens: 2048,
             responseMimeType: "application/json"
           }
         })

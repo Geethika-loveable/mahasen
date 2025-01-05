@@ -89,7 +89,7 @@ export const AdvancedSettings = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="llama3.2:latest">llama3.2:latest</SelectItem>
-                <SelectItem value="gemini-exp-1206">gemini-exp-1206</SelectItem>
+                <SelectItem value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</SelectItem>
               </SelectContent>
             </Select>
             {isModelChangeDisabled && (
