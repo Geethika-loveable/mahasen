@@ -25,7 +25,7 @@ export async function generateAIResponse(input: string,context: string = ''): Pr
       console.error('No AI settings found');
       // Use default Gemini model if no settings found. 
       //return await generateGeminiResponse(input,context);
-      return await generateGemini2FlashResponse(input,context);
+      return await generateGeminiResponse(input,context);
       //return await generateOllamaResponse(input,context);
     }
 
@@ -74,57 +74,13 @@ async function generateOllamaResponse(input: string,context: string = ''): Promi
   }
 }
 
+
 async function generateGeminiResponse(input: string, context: string = ''): Promise<string> {
   try {
-    const systemPrompt = `You are the official Customer Care AI assistant of iCET with access to a knowledge base. Give concise answers always. \n ${context} \n 
-    Please provide a general response if no specific information to the user question is available.`;
-
-    console.log('Generating Gemini response for input:', input);
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-exp-1206:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text: `${systemPrompt}\n\nUser Question: ${input}\n\nPlease provide your response`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.4,
-            topK: 64,
-            topP: 0.95,
-            maxOutputTokens: 4096,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log('Gemini response received');
-    return data.candidates[0].content.parts[0].text;
-  } catch (error) {
-    console.error('Error generating Gemini response:', error);
-    throw error;
-  }
-}
-
-async function generateGemini2FlashResponse(input: string, context: string = ''): Promise<string> {
-  try {
-    const systemPrompt = `You are the official Customer Care AI of Institute of Computer Engineering Technology - iCET with access to a knowledge base. Always try to Give concise answers. Help with whatever the user asks.\n ${context} \n 
-    Please provide a general response if no specific information to the user question is available. give the answer in a well structured, formatted way suitable for whatsapp. Don't use more than 1 "*" to bold. "- " for a bullet point for lists. Use emojis for better understanding.`;
+    const systemPrompt = `You are the official Customer Care AI of Institute of Computer Engineering Technology - iCET with access to a knowledge base. Always try to Give concise answers. Help with whatever the user asks. Please provide a general response if no specific information to the user question is available. Give the answer in a well structured, formatted way suitable for whatsapp. Don't use more than 1 "*" to bold. Use "- " for a bullet point for lists. Use emojis for better understanding. Take knowledge from recent conversations. But do NOT give redundant information just as in the recent conversation, Don't greet twice. Be concise. 
+    Ask a specific question once at the end to get more information and suggest them the best course available.
+    Questions like, "Are you a OL, AL or University student?", "What do you value, Software development, Web development, Artificial Intelligence, Networking, UI/ UX, " are good questions to ask.
+    Knowledge Base:\n\n  ${context}.\n`;
 
     console.log('Generating Gemini response for input:', input);
     const response = await fetch(
