@@ -62,16 +62,18 @@ serve(async (req) => {
 
       console.log(`Received message from ${userName} (${userId}): ${userMessage}`);
 
-      // Get AI settings and conversation timeout
+      // Get AI settings and conversation timeout - fetch only once
+      console.log('Fetching AI settings...');
       const aiSettings = await getAISettings();
+      console.log('AI settings retrieved:', aiSettings);
       const timeoutHours = aiSettings.conversation_timeout_hours || 1;
 
       // Get recent conversation history
       const conversationHistory = await getRecentConversationHistory(userId, timeoutHours, supabase);
       console.log('Retrieved conversation history:', conversationHistory);
 
-      // Generate AI response using the selected model
-      const aiResponse = await generateAIResponse(userMessage, conversationHistory);
+      // Generate AI response using the selected model and the already fetched settings
+      const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
       console.log('AI Response:', aiResponse);
       
       // Send response back via WhatsApp
