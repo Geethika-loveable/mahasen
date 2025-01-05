@@ -161,10 +161,10 @@ const AISettings = () => {
               onChange={(e) => setBehaviour(e.target.value)}
               placeholder="Define how the AI should behave when answering customer inquiries..."
               className="min-h-[150px]"
-              maxLength={500}
+              maxLength={1000}
             />
             <p className="text-sm text-slate-500">
-              {behaviour.length}/500 characters
+              {behaviour.length}/1000 characters
             </p>
           </div>
 
