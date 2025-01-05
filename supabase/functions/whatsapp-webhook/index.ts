@@ -19,10 +19,14 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function getRecentConversationHistory(supabase: any, userId: string, timeoutHours: number): Promise<string> {
+async function getRecentConversationHistory(supabase: any, userId: string, aiSettings: any): Promise<string> {
   try {
+    const timeoutHours = aiSettings.conversation_timeout_hours || 1;
+    const contextLength = aiSettings.context_memory_length || 2;
+    
     const timeoutAgo = new Date(Date.now() - (timeoutHours * 60 * 60 * 1000)).toISOString();
     console.log(`Getting messages newer than: ${timeoutAgo} (${timeoutHours} hours ago)`);
+    console.log(`Using context memory length: ${contextLength}`);
     
     const { data: conversations, error: convError } = await supabase
       .from('conversations')
@@ -37,14 +41,15 @@ async function getRecentConversationHistory(supabase: any, userId: string, timeo
     }
 
     const conversationId = conversations[0].id;
+    const pairsToFetch = contextLength * 2; // Each context pair has a user message and AI response
 
     const { data: messages, error: msgError } = await supabase
       .from('messages')
       .select('content, sender_name, created_at')
       .eq('conversation_id', conversationId)
       .gt('created_at', timeoutAgo)
-      .order('created_at', { ascending: true })
-      .limit(4);
+      .order('created_at', { ascending: false })
+      .limit(pairsToFetch);
 
     if (msgError) {
       console.error('Error fetching messages:', msgError);
@@ -56,10 +61,14 @@ async function getRecentConversationHistory(supabase: any, userId: string, timeo
       return '';
     }
 
-    const history = messages
+    // Reverse the messages to get them in chronological order
+    const orderedMessages = messages.reverse();
+    
+    const history = orderedMessages
       .map(msg => `${msg.sender_name}: ${msg.content}`)
       .join('\n');
 
+    console.log('Retrieved conversation history:', history);
     return history ? `\nRecent conversation history:\n${history}` : '';
   } catch (error) {
     console.error('Error fetching conversation history:', error);
@@ -138,8 +147,8 @@ serve(async (req) => {
       const aiSettings = await getAISettings();
       console.log('AI settings retrieved:', aiSettings);
 
-      // Get conversation history
-      const conversationHistory = await getRecentConversationHistory(supabase, userId, aiSettings.conversation_timeout_hours || 1);
+      // Get conversation history using AI settings
+      const conversationHistory = await getRecentConversationHistory(supabase, userId, aiSettings);
       console.log('Retrieved conversation history:', conversationHistory);
 
       // Generate AI response using the retrieved settings
