@@ -11,12 +11,63 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  // Initialize Supabase client
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+// Create a Set to store processed message IDs
+const processedMessages = new Set();
 
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function getRecentConversationHistory(supabase: any, userId: string, timeoutHours: number): Promise<string> {
+  try {
+    const timeoutAgo = new Date(Date.now() - (timeoutHours * 60 * 60 * 1000)).toISOString();
+    console.log(`Getting messages newer than: ${timeoutAgo} (${timeoutHours} hours ago)`);
+    
+    const { data: conversations, error: convError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('contact_number', userId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (convError || !conversations?.length) {
+      console.log('No recent conversation found');
+      return '';
+    }
+
+    const conversationId = conversations[0].id;
+
+    const { data: messages, error: msgError } = await supabase
+      .from('messages')
+      .select('content, sender_name, created_at')
+      .eq('conversation_id', conversationId)
+      .gt('created_at', timeoutAgo)
+      .order('created_at', { ascending: true })
+      .limit(4);
+
+    if (msgError) {
+      console.error('Error fetching messages:', msgError);
+      return '';
+    }
+
+    if (!messages?.length) {
+      console.log('No recent messages found within timeout period');
+      return '';
+    }
+
+    const history = messages
+      .map(msg => `${msg.sender_name}: ${msg.content}`)
+      .join('\n');
+
+    return history ? `\nRecent conversation history:\n${history}` : '';
+  } catch (error) {
+    console.error('Error fetching conversation history:', error);
+    return '';
+  }
+}
+
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -43,10 +94,11 @@ serve(async (req) => {
     });
   }
 
-  // Handle incoming messages
   if (req.method === 'POST') {
     try {
       const message = await req.json();
+      console.log('WhatsApp API response:', JSON.stringify(message));
+
       const changes = message.entry[0].changes[0].value;
       
       if (!changes.messages || changes.messages.length === 0) {
@@ -56,23 +108,41 @@ serve(async (req) => {
         });
       }
 
+      const messageId = changes.messages[0].id;
+      
+      // Check if we've already processed this message
+      if (processedMessages.has(messageId)) {
+        console.log(`Message ${messageId} already processed, skipping`);
+        return new Response(JSON.stringify({ success: true, status: 'already_processed' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Add message to processed set
+      processedMessages.add(messageId);
+      
+      // Clean up old message IDs (keep last 1000)
+      if (processedMessages.size > 1000) {
+        const idsToRemove = Array.from(processedMessages).slice(0, processedMessages.size - 1000);
+        idsToRemove.forEach(id => processedMessages.delete(id));
+      }
+
       const userMessage = changes.messages[0].text.body;
       const userId = changes.contacts[0].wa_id;
       const userName = changes.contacts[0].profile.name;
 
       console.log(`Received message from ${userName} (${userId}): ${userMessage}`);
 
-      // Get AI settings and conversation timeout - fetch only once
+      // Fetch AI settings once
       console.log('Fetching AI settings...');
       const aiSettings = await getAISettings();
       console.log('AI settings retrieved:', aiSettings);
-      const timeoutHours = aiSettings.conversation_timeout_hours || 1;
 
-      // Get recent conversation history
-      const conversationHistory = await getRecentConversationHistory(userId, timeoutHours, supabase);
+      // Get conversation history
+      const conversationHistory = await getRecentConversationHistory(supabase, userId, aiSettings.conversation_timeout_hours || 1);
       console.log('Retrieved conversation history:', conversationHistory);
 
-      // Generate AI response using the selected model and the already fetched settings
+      // Generate AI response using the retrieved settings
       const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
       console.log('AI Response:', aiResponse);
       
@@ -101,55 +171,3 @@ serve(async (req) => {
     headers: corsHeaders 
   });
 });
-
-async function getRecentConversationHistory(userId: string, timeoutHours: number, supabase: any): Promise<string> {
-  try {
-    // Get timeout setting from AI settings
-    const timeoutAgo = new Date(Date.now() - (timeoutHours * 60 * 60 * 1000)).toISOString();
-    console.log(`Getting messages newer than: ${timeoutAgo} (${timeoutHours} hours ago)`);
-    
-    // Get the conversation ID for this user's recent messages
-    const { data: conversations, error: convError } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('contact_number', userId)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (convError || !conversations?.length) {
-      console.log('No recent conversation found');
-      return '';
-    }
-
-    const conversationId = conversations[0].id;
-
-    // Get the messages within the timeout period
-    const { data: messages, error: msgError } = await supabase
-      .from('messages')
-      .select('content, sender_name, created_at')
-      .eq('conversation_id', conversationId)
-      .gt('created_at', timeoutAgo)
-      .order('created_at', { ascending: true })  // Changed to ascending to get messages in chronological order
-      .limit(4);  // Limit to last 4 messages to avoid duplicate responses
-
-    if (msgError) {
-      console.error('Error fetching messages:', msgError);
-      return '';
-    }
-
-    if (!messages?.length) {
-      console.log('No recent messages found within timeout period');
-      return '';
-    }
-
-    // Format the conversation history
-    const history = messages
-      .map(msg => `${msg.sender_name}: ${msg.content}`)
-      .join('\n');
-
-    return history ? `\nRecent conversation history:\n${history}` : '';
-  } catch (error) {
-    console.error('Error fetching conversation history:', error);
-    return '';
-  }
-}
