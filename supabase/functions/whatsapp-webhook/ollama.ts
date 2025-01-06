@@ -1,6 +1,12 @@
 import { getAISettings } from './ai-settings.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
-async function searchKnowledgeBase(supabase: any, embedding: string): Promise<string> {
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function searchKnowledgeBase(embedding: any): Promise<string> {
   try {
     const { data: matches, error } = await supabase.rpc('match_knowledge_base', {
       query_embedding: embedding,
@@ -45,7 +51,7 @@ export async function generateAIResponse(userMessage: string, conversationHistor
 
     // Search knowledge base with the embedding
     console.log('Searching knowledge base with embedding...');
-    const knowledgeBaseContext = await searchKnowledgeBase(supabase, embedding);
+    const knowledgeBaseContext = await searchKnowledgeBase(embedding);
 
     // Prepare context with knowledge base content
     const fullContext = `${aiSettings.behaviour}\n\nTone: ${aiSettings.tone}\n\nRelevant knowledge base content:\n${knowledgeBaseContext}\n\n${conversationHistory}\n\nUser: ${userMessage}\nAssistant:`;
