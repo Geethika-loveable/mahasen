@@ -1,13 +1,59 @@
 import { getAISettings } from './ai-settings.ts';
 
+async function searchKnowledgeBase(supabase: any, embedding: string): Promise<string> {
+  try {
+    const { data: matches, error } = await supabase.rpc('match_knowledge_base', {
+      query_embedding: embedding,
+      match_threshold: 0.5,
+      match_count: 5
+    });
+
+    if (error) {
+      console.error('Error searching knowledge base:', error);
+      return '';
+    }
+
+    if (!matches || matches.length === 0) {
+      console.log('No relevant matches found in knowledge base');
+      return '';
+    }
+
+    // Combine relevant content from matches
+    const contextContent = matches
+      .map(match => match.content)
+      .join('\n\n');
+
+    console.log('Found relevant knowledge base content:', contextContent);
+    return contextContent;
+  } catch (error) {
+    console.error('Error in knowledge base search:', error);
+    return '';
+  }
+}
+
 export async function generateAIResponse(userMessage: string, conversationHistory: string, aiSettings: any): Promise<string> {
   try {
     console.log('Using AI model:', aiSettings.model_name);
 
+    // First, generate embedding for the user's question
+    console.log('Generating embedding for user query...');
+    const session = new Supabase.ai.Session('gte-small');
+    const embedding = await session.run(userMessage, {
+      mean_pool: true,
+      normalize: true,
+    });
+
+    // Search knowledge base with the embedding
+    console.log('Searching knowledge base with embedding...');
+    const knowledgeBaseContext = await searchKnowledgeBase(supabase, embedding);
+
+    // Prepare context with knowledge base content
+    const fullContext = `${aiSettings.behaviour}\n\nTone: ${aiSettings.tone}\n\nRelevant knowledge base content:\n${knowledgeBaseContext}\n\n${conversationHistory}\n\nUser: ${userMessage}\nAssistant:`;
+
     if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
-      return await generateGeminiResponse(userMessage, conversationHistory, aiSettings);
+      return await generateGeminiResponse(fullContext, aiSettings);
     } else {
-      return await generateOllamaResponse(userMessage, conversationHistory, aiSettings);
+      return await generateOllamaResponse(fullContext, aiSettings);
     }
   } catch (error) {
     console.error('Error generating AI response:', error);
@@ -15,8 +61,8 @@ export async function generateAIResponse(userMessage: string, conversationHistor
   }
 }
 
-async function generateGeminiResponse(userMessage: string, conversationHistory: string, aiSettings: any): Promise<string> {
-  console.log('Generating Gemini response for input:', userMessage);
+async function generateGeminiResponse(context: string, aiSettings: any): Promise<string> {
+  console.log('Generating Gemini response for context:', context);
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
   
   try {
@@ -28,7 +74,7 @@ async function generateGeminiResponse(userMessage: string, conversationHistory: 
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `${aiSettings.behaviour}\n\nTone: ${aiSettings.tone}\n\n${conversationHistory}\n\nUser: ${userMessage}\nAssistant:`
+            text: context
           }]
         }]
       })
@@ -48,7 +94,7 @@ async function generateGeminiResponse(userMessage: string, conversationHistory: 
   }
 }
 
-async function generateOllamaResponse(userMessage: string, conversationHistory: string, aiSettings: any): Promise<string> {
+async function generateOllamaResponse(context: string, aiSettings: any): Promise<string> {
   const OLLAMA_BASE_URL = Deno.env.get('OLLAMA_BASE_URL')!;
   
   try {
@@ -59,7 +105,7 @@ async function generateOllamaResponse(userMessage: string, conversationHistory: 
       },
       body: JSON.stringify({
         model: 'llama2',
-        prompt: `${aiSettings.behaviour}\n\nTone: ${aiSettings.tone}\n\n${conversationHistory}\n\nUser: ${userMessage}\nAssistant:`,
+        prompt: context,
         stream: false
       })
     });
