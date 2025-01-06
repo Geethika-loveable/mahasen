@@ -51,12 +51,13 @@ const PlatformChats = () => {
             .select("*")
             .eq("conversation_id", conversation.id)
             .eq("status", "received")
+            .eq("read", false) // Only count unread messages
             .order("created_at", { ascending: false })
             .limit(1);
 
           if (messagesError) throw messagesError;
 
-          // Check if the last message is unread
+          // Check if there are any unread messages
           const hasUnread = messages && messages.length > 0;
 
           return {
@@ -69,6 +70,23 @@ const PlatformChats = () => {
       return conversationsWithUnreadStatus as Conversation[];
     },
   });
+
+  const handleChatClick = async (conversationId: string) => {
+    // Mark all messages as read when entering the chat
+    const { error } = await supabase
+      .from("messages")
+      .update({ read: true })
+      .eq("conversation_id", conversationId)
+      .eq("status", "received")
+      .eq("read", false);
+
+    if (error) {
+      console.error("Error marking messages as read:", error);
+    }
+
+    // Navigate to the chat
+    navigate(`/chat/${conversationId}`);
+  };
 
   if (!isValidPlatform(platform)) {
     return (
@@ -116,7 +134,7 @@ const PlatformChats = () => {
               <Card
                 key={conversation.id}
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(`/chat/${conversation.id}`)}
+                onClick={() => handleChatClick(conversation.id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg font-semibold">
