@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare, CircleDot } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -15,6 +15,7 @@ interface Conversation {
   contact_number: string;
   updated_at: string;
   platform: Platform;
+  has_unread: boolean;
 }
 
 const PlatformChats = () => {
@@ -33,16 +34,40 @@ const PlatformChats = () => {
         throw new Error("Invalid platform specified");
       }
 
-      const { data, error } = await supabase
+      // Get all conversations for the platform
+      const { data: conversationsData, error: conversationsError } = await supabase
         .from("conversations")
         .select("*")
         .eq("platform", platform)
         .order("updated_at", { ascending: false });
 
-      if (error) throw error;
-      return data as Conversation[];
+      if (conversationsError) throw conversationsError;
+
+      // For each conversation, check if there are any unread messages
+      const conversationsWithUnreadStatus = await Promise.all(
+        conversationsData.map(async (conversation) => {
+          const { data: messages, error: messagesError } = await supabase
+            .from("messages")
+            .select("*")
+            .eq("conversation_id", conversation.id)
+            .eq("status", "received")
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (messagesError) throw messagesError;
+
+          // Check if the last message is unread
+          const hasUnread = messages && messages.length > 0;
+
+          return {
+            ...conversation,
+            has_unread: hasUnread,
+          };
+        })
+      );
+
+      return conversationsWithUnreadStatus as Conversation[];
     },
-    enabled: isValidPlatform(platform),
   });
 
   if (!isValidPlatform(platform)) {
@@ -97,8 +122,13 @@ const PlatformChats = () => {
                   <CardTitle className="text-lg font-semibold">
                     {conversation.contact_name}
                   </CardTitle>
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(conversation.updated_at).toLocaleDateString()}
+                  <div className="flex items-center gap-2">
+                    {conversation.has_unread && (
+                      <CircleDot className="h-4 w-4 text-green-500" />
+                    )}
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(conversation.updated_at).toLocaleDateString()}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
