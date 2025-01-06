@@ -117,6 +117,7 @@ export type Database = {
           conversation_id: string | null
           created_at: string | null
           id: string
+          read: boolean | null
           sender_name: string
           sender_number: string
           status: Database["public"]["Enums"]["message_status"]
@@ -126,6 +127,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string | null
           id?: string
+          read?: boolean | null
           sender_name: string
           sender_number: string
           status: Database["public"]["Enums"]["message_status"]
@@ -135,6 +137,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string | null
           id?: string
+          read?: boolean | null
           sender_name?: string
           sender_number?: string
           status?: Database["public"]["Enums"]["message_status"]
