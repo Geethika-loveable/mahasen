@@ -2,9 +2,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare, CircleDot } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { useEffect } from "react";
 
 type Platform = Database["public"]["Enums"]["platform_type"];
 const validPlatforms: Platform[] = ["whatsapp", "facebook", "instagram"];
@@ -21,11 +22,37 @@ interface Conversation {
 const PlatformChats = () => {
   const { platform } = useParams<{ platform: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Validate if the platform is valid
   const isValidPlatform = (p: string | undefined): p is Platform => {
     return !!p && validPlatforms.includes(p as Platform);
   };
+
+  // Set up real-time subscription for message updates
+  useEffect(() => {
+    if (!isValidPlatform(platform)) return;
+
+    const channel = supabase
+      .channel('public:messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+        },
+        () => {
+          // Invalidate and refetch conversations when messages are updated
+          queryClient.invalidateQueries({ queryKey: ["conversations", platform] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [platform, queryClient]);
 
   const { data: conversations, isLoading } = useQuery({
     queryKey: ["conversations", platform],
@@ -51,7 +78,7 @@ const PlatformChats = () => {
             .select("*")
             .eq("conversation_id", conversation.id)
             .eq("status", "received")
-            .eq("read", false) // Only count unread messages
+            .eq("read", false)
             .order("created_at", { ascending: false })
             .limit(1);
 
@@ -72,20 +99,24 @@ const PlatformChats = () => {
   });
 
   const handleChatClick = async (conversationId: string) => {
-    // Mark all messages as read when entering the chat
-    const { error } = await supabase
-      .from("messages")
-      .update({ read: true })
-      .eq("conversation_id", conversationId)
-      .eq("status", "received")
-      .eq("read", false);
+    try {
+      // Mark all messages as read when entering the chat
+      const { error } = await supabase
+        .from("messages")
+        .update({ read: true })
+        .eq("conversation_id", conversationId)
+        .eq("status", "received")
+        .eq("read", false);
 
-    if (error) {
-      console.error("Error marking messages as read:", error);
+      if (error) {
+        console.error("Error marking messages as read:", error);
+      }
+
+      // Navigate to the chat
+      navigate(`/chat/${conversationId}`);
+    } catch (error) {
+      console.error("Error in handleChatClick:", error);
     }
-
-    // Navigate to the chat
-    navigate(`/chat/${conversationId}`);
   };
 
   if (!isValidPlatform(platform)) {
