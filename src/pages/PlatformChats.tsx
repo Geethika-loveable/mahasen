@@ -68,7 +68,7 @@ const PlatformChats = () => {
         throw new Error("Invalid platform specified");
       }
 
-      // Get all conversations for the platform
+      // Get all conversations for the platform, sorted by updated_at in descending order
       const { data: conversationsData, error: conversationsError } = await supabase
         .from("conversations")
         .select("*")
