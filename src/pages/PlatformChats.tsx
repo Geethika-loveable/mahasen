@@ -17,6 +17,7 @@ interface Conversation {
   updated_at: string;
   platform: Platform;
   has_unread: boolean;
+  latest_message_time: string;
 }
 
 const PlatformChats = () => {
@@ -68,37 +69,40 @@ const PlatformChats = () => {
         throw new Error("Invalid platform specified");
       }
 
-      // Get all conversations for the platform, sorted by updated_at in descending order
+      // Get conversations with their latest message timestamp
       const { data: conversationsData, error: conversationsError } = await supabase
         .from("conversations")
-        .select("*")
-        .eq("platform", platform)
-        .order("updated_at", { ascending: false });
+        .select(`
+          *,
+          messages:messages (
+            created_at,
+            read
+          )
+        `)
+        .eq("platform", platform);
 
       if (conversationsError) throw conversationsError;
 
-      // For each conversation, check if there are any unread messages
-      const conversationsWithUnreadStatus = await Promise.all(
-        conversationsData.map(async (conversation) => {
-          const { data: messages, error: messagesError } = await supabase
-            .from("messages")
-            .select("*")
-            .eq("conversation_id", conversation.id)
-            .eq("status", "received")
-            .eq("read", false)
-            .order("created_at", { ascending: false })
-            .limit(1);
+      // Process the conversations to include latest message time and unread status
+      const processedConversations = conversationsData.map(conversation => {
+        const messages = conversation.messages || [];
+        const latestMessage = messages.reduce((latest: any, current: any) => {
+          return !latest || new Date(current.created_at) > new Date(latest.created_at)
+            ? current
+            : latest;
+        }, null);
 
-          if (messagesError) throw messagesError;
+        return {
+          ...conversation,
+          has_unread: messages.some((msg: any) => !msg.read && msg.status === 'received'),
+          latest_message_time: latestMessage ? latestMessage.created_at : conversation.created_at
+        };
+      });
 
-          return {
-            ...conversation,
-            has_unread: messages && messages.length > 0,
-          };
-        })
+      // Sort by latest message time
+      return processedConversations.sort((a, b) => 
+        new Date(b.latest_message_time).getTime() - new Date(a.latest_message_time).getTime()
       );
-
-      return conversationsWithUnreadStatus as Conversation[];
     },
     refetchOnWindowFocus: true,
   });
@@ -187,7 +191,7 @@ const PlatformChats = () => {
                       <CircleDot className="h-4 w-4 text-green-500" />
                     )}
                     <div className="text-sm text-muted-foreground">
-                      {new Date(conversation.updated_at).toLocaleDateString()}
+                      {new Date(conversation.latest_message_time).toLocaleDateString()}
                     </div>
                   </div>
                 </CardHeader>
