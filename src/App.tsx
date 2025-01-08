@@ -16,6 +16,7 @@ import ChatConversation from "./pages/ChatConversation";
 import About from "./pages/About";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import AISettings from "./pages/AISettings";
+import AgentFlow from "./pages/AgentFlow";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -168,6 +169,16 @@ const App = () => {
                 element={
                   isAuthenticated ? (
                     <KnowledgeBase />
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/agent-flow"
+                element={
+                  isAuthenticated ? (
+                    <AgentFlow />
                   ) : (
                     <Navigate to="/login" replace />
                   )

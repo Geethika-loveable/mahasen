@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Facebook, Instagram, FileText, Settings } from "lucide-react";
+import { MessageSquare, Facebook, Instagram, FileText, Settings, Network } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -90,6 +90,14 @@ const Dashboard = () => {
             </Button>
             <Button
               variant="outline"
+              onClick={() => navigate("/agent-flow")}
+              className="flex items-center gap-2"
+            >
+              <Network className="h-4 w-4" />
+              Agent Flow
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => navigate("/ai-settings")}
               className="flex items-center gap-2"
             >
@@ -141,6 +149,23 @@ const Dashboard = () => {
               onClick={() => navigate("/knowledge-base")}
             >
               Manage Files
+            </Button>
+          </Card>
+
+          <Card className="p-6 cursor-pointer transition-all duration-200 hover:shadow-lg border-2 border-transparent dark:bg-slate-900">
+            <div className="rounded-full w-12 h-12 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 flex items-center justify-center mb-4">
+              <Network className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Agent Flow</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              Design and manage your agent workflows
+            </p>
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-indigo-600"
+              onClick={() => navigate("/agent-flow")}
+            >
+              Setup Agents
             </Button>
           </Card>
         </div>
