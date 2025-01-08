@@ -34,22 +34,29 @@ const PlatformChats = () => {
     if (!isValidPlatform(platform)) return;
 
     const channel = supabase
-      .channel('public:messages')
+      .channel('messages-updates')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'messages',
+          filter: platform ? `platform=eq.${platform}` : undefined
         },
         () => {
-          // Invalidate and refetch conversations when messages are updated
-          queryClient.invalidateQueries({ queryKey: ["conversations", platform] });
+          // Immediately invalidate and refetch conversations
+          queryClient.invalidateQueries({ 
+            queryKey: ["conversations", platform],
+            exact: true
+          });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Subscription status:", status);
+      });
 
     return () => {
+      console.log("Cleaning up subscription");
       supabase.removeChannel(channel);
     };
   }, [platform, queryClient]);
@@ -84,18 +91,16 @@ const PlatformChats = () => {
 
           if (messagesError) throw messagesError;
 
-          // Check if there are any unread messages
-          const hasUnread = messages && messages.length > 0;
-
           return {
             ...conversation,
-            has_unread: hasUnread,
+            has_unread: messages && messages.length > 0,
           };
         })
       );
 
       return conversationsWithUnreadStatus as Conversation[];
     },
+    refetchOnWindowFocus: true,
   });
 
   const handleChatClick = async (conversationId: string) => {
@@ -111,6 +116,12 @@ const PlatformChats = () => {
       if (error) {
         console.error("Error marking messages as read:", error);
       }
+
+      // Immediately invalidate the conversations query to update UI
+      queryClient.invalidateQueries({ 
+        queryKey: ["conversations", platform],
+        exact: true
+      });
 
       // Navigate to the chat
       navigate(`/chat/${conversationId}`);
