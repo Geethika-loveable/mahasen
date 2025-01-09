@@ -11,13 +11,11 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
   const { toast } = useToast();
 
   const cleanTextContent = (text: string): string => {
-    // Remove null bytes and other control characters
-    const cleanedText = text
-      .replace(/\0/g, '') // Remove null bytes
-      .replace(/[\x00-\x09\x0B-\x1F\x7F]/g, '') // Remove control characters
-      .replace(/\\u0000/g, ''); // Remove Unicode escape sequences for null
-
-    return cleanedText.trim();
+    return text
+      .replace(/\0/g, '')
+      .replace(/[\x00-\x09\x0B-\x1F\x7F]/g, '')
+      .replace(/\\u0000/g, '')
+      .trim();
   };
 
   const validateFileContent = (content: string): boolean => {
@@ -25,7 +23,6 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
       throw new Error('File is empty');
     }
     
-    // Check for minimum content length (e.g., 10 characters)
     if (content.length < 10) {
       throw new Error('File content is too short');
     }
@@ -45,11 +42,9 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
 
     setIsUploading(true);
     try {
-      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) throw new Error("User not authenticated");
 
-      // Read and clean file content
       const text = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -60,7 +55,6 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
               return;
             }
 
-            // Clean and validate content
             const cleanedContent = cleanTextContent(result);
             console.log('Content length before cleaning:', result.length);
             console.log('Content length after cleaning:', cleanedContent.length);
@@ -77,7 +71,6 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
         reader.readAsText(selectedFile);
       });
 
-      // Generate embedding using the new generate-file-embedding function
       console.log('Requesting file embedding generation...');
       const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke(
         'generate-file-embedding',
@@ -95,9 +88,9 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
         throw new Error('No embedding data received');
       }
 
-      // Upload file to storage
       const fileExt = selectedFile.name.split('.').pop();
       const filePath = `${crypto.randomUUID()}.${fileExt}`;
+      const fileId = crypto.randomUUID();
 
       const { error: uploadError } = await supabase.storage
         .from("knowledge_base")
@@ -105,8 +98,8 @@ export const FileUploader = ({ onUploadSuccess }: { onUploadSuccess: () => void 
 
       if (uploadError) throw uploadError;
 
-      // Save file metadata and embedding to database
       const { error: dbError } = await supabase.from("knowledge_base_files").insert({
+        id: fileId,
         filename: selectedFile.name,
         file_path: filePath,
         content_type: selectedFile.type,

@@ -88,7 +88,7 @@ const AgentFlow = () => {
         id: agent.id,
         name: agent.name,
         type: agent.type,
-        systemRole: agent.system_role,
+        systemRole: agent.system_role, // Map from database column to frontend property
         prompt: agent.prompt,
         features: agent.features
       }));
@@ -102,7 +102,7 @@ const AgentFlow = () => {
       .insert([{
         name: defaultAgent.name,
         type: defaultAgent.type,
-        system_role: defaultAgent.systemRole,
+        system_role: defaultAgent.systemRole, // Map from frontend property to database column
         prompt: defaultAgent.prompt,
         features: defaultAgent.features,
       }])
@@ -123,7 +123,7 @@ const AgentFlow = () => {
         id: data.id,
         name: data.name,
         type: data.type,
-        systemRole: data.system_role,
+        systemRole: data.system_role, // Map from database column to frontend property
         prompt: data.prompt,
         features: data.features,
       };
@@ -141,7 +141,7 @@ const AgentFlow = () => {
       .update({
         name: updatedAgent.name,
         type: updatedAgent.type,
-        system_role: updatedAgent.systemRole,
+        system_role: updatedAgent.systemRole, // Map from frontend property to database column
         prompt: updatedAgent.prompt,
         features: updatedAgent.features,
       })

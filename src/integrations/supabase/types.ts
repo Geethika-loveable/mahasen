@@ -11,401 +11,401 @@ export type Database = {
     Tables: {
       agents: {
         Row: {
-          id: string;
-          name: string;
-          type: "welcome" | "sales" | "knowledge" | "support";
-          system_role: string;
-          prompt: string;
-          features: string[];
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          features: string[]
+          id: string
+          name: string
+          prompt: string
+          system_role: string
+          type: Database["public"]["Enums"]["agent_type"]
+          updated_at: string
+        }
         Insert: {
-          id?: string;
-          name: string;
-          type: "welcome" | "sales" | "knowledge" | "support";
-          system_role: string;
-          prompt: string;
-          features?: string[];
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          features?: string[]
+          id?: string
+          name: string
+          prompt: string
+          system_role: string
+          type: Database["public"]["Enums"]["agent_type"]
+          updated_at?: string
+        }
         Update: {
-          id?: string;
-          name?: string;
-          type?: "welcome" | "sales" | "knowledge" | "support";
-          system_role?: string;
-          prompt?: string;
-          features?: string[];
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          features?: string[]
+          id?: string
+          name?: string
+          prompt?: string
+          system_role?: string
+          type?: Database["public"]["Enums"]["agent_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_settings: {
         Row: {
-          behaviour: string | null;
-          context_memory_length: number | null;
-          conversation_timeout_hours: number | null;
-          created_at: string;
-          id: number;
-          model_name: Database["public"]["Enums"]["ai_model"];
-          tone: Database["public"]["Enums"]["ai_tone"];
-          updated_at: string;
-        };
+          behaviour: string | null
+          context_memory_length: number | null
+          conversation_timeout_hours: number | null
+          created_at: string
+          id: number
+          model_name: Database["public"]["Enums"]["ai_model"]
+          tone: Database["public"]["Enums"]["ai_tone"]
+          updated_at: string
+        }
         Insert: {
-          behaviour?: string | null;
-          context_memory_length?: number | null;
-          conversation_timeout_hours?: number | null;
-          created_at?: string;
-          id?: number;
-          model_name?: Database["public"]["Enums"]["ai_model"];
-          tone?: Database["public"]["Enums"]["ai_tone"];
-          updated_at?: string;
-        };
+          behaviour?: string | null
+          context_memory_length?: number | null
+          conversation_timeout_hours?: number | null
+          created_at?: string
+          id?: number
+          model_name?: Database["public"]["Enums"]["ai_model"]
+          tone?: Database["public"]["Enums"]["ai_tone"]
+          updated_at?: string
+        }
         Update: {
-          behaviour?: string | null;
-          context_memory_length?: number | null;
-          conversation_timeout_hours?: number | null;
-          created_at?: string;
-          id?: number;
-          model_name?: Database["public"]["Enums"]["ai_model"];
-          tone?: Database["public"]["Enums"]["ai_tone"];
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          behaviour?: string | null
+          context_memory_length?: number | null
+          conversation_timeout_hours?: number | null
+          created_at?: string
+          id?: number
+          model_name?: Database["public"]["Enums"]["ai_model"]
+          tone?: Database["public"]["Enums"]["ai_tone"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
-          ai_enabled: boolean | null;
-          contact_name: string;
-          contact_number: string;
-          created_at: string | null;
-          id: string;
-          platform: Database["public"]["Enums"]["platform_type"];
-          updated_at: string | null;
-        };
+          ai_enabled: boolean | null
+          contact_name: string
+          contact_number: string
+          created_at: string | null
+          id: string
+          platform: Database["public"]["Enums"]["platform_type"]
+          updated_at: string | null
+        }
         Insert: {
-          ai_enabled?: boolean | null;
-          contact_name: string;
-          contact_number: string;
-          created_at?: string | null;
-          id?: string;
-          platform: Database["public"]["Enums"]["platform_type"];
-          updated_at?: string | null;
-        };
+          ai_enabled?: boolean | null
+          contact_name: string
+          contact_number: string
+          created_at?: string | null
+          id?: string
+          platform: Database["public"]["Enums"]["platform_type"]
+          updated_at?: string | null
+        }
         Update: {
-          ai_enabled?: boolean | null;
-          contact_name?: string;
-          contact_number?: string;
-          created_at?: string | null;
-          id?: string;
-          platform?: Database["public"]["Enums"]["platform_type"];
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
+          ai_enabled?: boolean | null
+          contact_name?: string
+          contact_number?: string
+          created_at?: string | null
+          id?: string
+          platform?: Database["public"]["Enums"]["platform_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       knowledge_base_files: {
         Row: {
-          content: string | null;
-          content_type: string;
-          created_at: string;
-          embedding: string | null;
-          file_path: string;
-          filename: string;
-          fts: unknown | null;
-          id: string;
-          size: number;
-          user_id: string;
-        };
+          content: string | null
+          content_type: string
+          created_at: string
+          embedding: string | null
+          file_path: string
+          filename: string
+          fts: unknown | null
+          id: string
+          size: number
+          user_id: string
+        }
         Insert: {
-          content?: string | null;
-          content_type: string;
-          created_at?: string;
-          embedding?: string | null;
-          file_path: string;
-          filename: string;
-          fts?: unknown | null;
-          id: string;
-          size: number;
-          user_id: string;
-        };
+          content?: string | null
+          content_type: string
+          created_at?: string
+          embedding?: string | null
+          file_path: string
+          filename: string
+          fts?: unknown | null
+          id?: string
+          size: number
+          user_id: string
+        }
         Update: {
-          content?: string | null;
-          content_type?: string;
-          created_at?: string;
-          embedding?: string | null;
-          file_path?: string;
-          filename?: string;
-          fts?: unknown | null;
-          id?: string;
-          size?: number;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
+          content?: string | null
+          content_type?: string
+          created_at?: string
+          embedding?: string | null
+          file_path?: string
+          filename?: string
+          fts?: unknown | null
+          id?: string
+          size?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
-          content: string;
-          conversation_id: string | null;
-          created_at: string | null;
-          id: string;
-          read: boolean | null;
-          sender_name: string;
-          sender_number: string;
-          status: Database["public"]["Enums"]["message_status"];
-        };
+          content: string
+          conversation_id: string | null
+          created_at: string | null
+          id: string
+          read: boolean | null
+          sender_name: string
+          sender_number: string
+          status: Database["public"]["Enums"]["message_status"]
+        }
         Insert: {
-          content: string;
-          conversation_id?: string | null;
-          created_at?: string | null;
-          id?: string;
-          read?: boolean | null;
-          sender_name: string;
-          sender_number: string;
-          status: Database["public"]["Enums"]["message_status"];
-        };
+          content: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_name: string
+          sender_number: string
+          status: Database["public"]["Enums"]["message_status"]
+        }
         Update: {
-          content?: string;
-          conversation_id?: string | null;
-          created_at?: string | null;
-          id?: string;
-          read?: boolean | null;
-          sender_name?: string;
-          sender_number?: string;
-          status?: Database["public"]["Enums"]["message_status"];
-        };
+          content?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_name?: string
+          sender_number?: string
+          status?: Database["public"]["Enums"]["message_status"]
+        }
         Relationships: [
           {
-            foreignKeyName: "messages_conversation_id_fkey";
-            columns: ["conversation_id"];
-            isOneToOne: false;
-            referencedRelation: "conversations";
-            referencedColumns: ["id"];
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
       binary_quantize:
         | {
             Args: {
-              "": string;
-            };
-            Returns: unknown;
+              "": string
+            }
+            Returns: unknown
           }
         | {
             Args: {
-              "": unknown;
-            };
-            Returns: unknown;
-          };
+              "": unknown
+            }
+            Returns: unknown
+          }
       halfvec_avg: {
         Args: {
-          "": number[];
-        };
-        Returns: unknown;
-      };
+          "": number[]
+        }
+        Returns: unknown
+      }
       halfvec_out: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       halfvec_send: {
         Args: {
-          "": unknown;
-        };
-        Returns: string;
-      };
+          "": unknown
+        }
+        Returns: string
+      }
       halfvec_typmod_in: {
         Args: {
-          "": unknown[];
-        };
-        Returns: number;
-      };
+          "": unknown[]
+        }
+        Returns: number
+      }
       hnsw_bit_support: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       hnsw_halfvec_support: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       hnsw_sparsevec_support: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       hnswhandler: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       ivfflat_bit_support: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       ivfflat_halfvec_support: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       ivfflathandler: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       l2_norm:
         | {
             Args: {
-              "": unknown;
-            };
-            Returns: number;
+              "": unknown
+            }
+            Returns: number
           }
         | {
             Args: {
-              "": unknown;
-            };
-            Returns: number;
-          };
+              "": unknown
+            }
+            Returns: number
+          }
       l2_normalize:
         | {
             Args: {
-              "": string;
-            };
-            Returns: string;
+              "": string
+            }
+            Returns: string
           }
         | {
             Args: {
-              "": unknown;
-            };
-            Returns: unknown;
+              "": unknown
+            }
+            Returns: unknown
           }
         | {
             Args: {
-              "": unknown;
-            };
-            Returns: unknown;
-          };
+              "": unknown
+            }
+            Returns: unknown
+          }
       match_knowledge_base:
         | {
             Args: {
-              query_embedding: string;
-              match_threshold: number;
-              match_count: number;
-            };
+              query_embedding: string
+              match_threshold: number
+              match_count: number
+            }
             Returns: {
-              id: string;
-              content: string;
-              similarity: number;
-            }[];
+              id: string
+              content: string
+              similarity: number
+            }[]
           }
         | {
             Args: {
-              query_text: string;
-              query_embedding: string;
-              match_count?: number;
-              full_text_weight?: number;
-              semantic_weight?: number;
-              match_threshold?: number;
-              rrf_k?: number;
-            };
+              query_text: string
+              query_embedding: string
+              match_count?: number
+              full_text_weight?: number
+              semantic_weight?: number
+              match_threshold?: number
+              rrf_k?: number
+            }
             Returns: {
-              id: string;
-              content: string;
-              similarity: number;
-            }[];
-          };
+              id: string
+              content: string
+              similarity: number
+            }[]
+          }
       sparsevec_out: {
         Args: {
-          "": unknown;
-        };
-        Returns: unknown;
-      };
+          "": unknown
+        }
+        Returns: unknown
+      }
       sparsevec_send: {
         Args: {
-          "": unknown;
-        };
-        Returns: string;
-      };
+          "": unknown
+        }
+        Returns: string
+      }
       sparsevec_typmod_in: {
         Args: {
-          "": unknown[];
-        };
-        Returns: number;
-      };
+          "": unknown[]
+        }
+        Returns: number
+      }
       vector_avg: {
         Args: {
-          "": number[];
-        };
-        Returns: string;
-      };
+          "": number[]
+        }
+        Returns: string
+      }
       vector_dims:
         | {
             Args: {
-              "": string;
-            };
-            Returns: number;
+              "": string
+            }
+            Returns: number
           }
         | {
             Args: {
-              "": unknown;
-            };
-            Returns: number;
-          };
+              "": unknown
+            }
+            Returns: number
+          }
       vector_norm: {
         Args: {
-          "": string;
-        };
-        Returns: number;
-      };
+          "": string
+        }
+        Returns: number
+      }
       vector_out: {
         Args: {
-          "": string;
-        };
-        Returns: unknown;
-      };
+          "": string
+        }
+        Returns: unknown
+      }
       vector_send: {
         Args: {
-          "": string;
-        };
-        Returns: string;
-      };
+          "": string
+        }
+        Returns: string
+      }
       vector_typmod_in: {
         Args: {
-          "": unknown[];
-        };
-        Returns: number;
-      };
-    };
+          "": unknown[]
+        }
+        Returns: number
+      }
+    }
     Enums: {
-      agent_type: "welcome" | "sales" | "knowledge" | "support";
-      ai_model: "llama3.2:latest" | "gemini-2.0-flash-exp";
-      ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful";
-      message_status: "sent" | "received";
-      platform_type: "whatsapp" | "facebook" | "instagram";
-    };
+      agent_type: "welcome" | "sales" | "knowledge" | "support"
+      ai_model: "llama3.2:latest" | "gemini-2.0-flash-exp"
+      ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
+      message_status: "sent" | "received"
+      platform_type: "whatsapp" | "facebook" | "instagram"
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
+      [_ in never]: never
+    }
+  }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">];
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   PublicTableNameOrOptions extends
@@ -430,7 +430,7 @@ export type Tables<
       }
       ? R
       : never
-    : never;
+    : never
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
@@ -451,7 +451,7 @@ export type TablesInsert<
       }
       ? I
       : never
-    : never;
+    : never
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
@@ -472,7 +472,7 @@ export type TablesUpdate<
       }
       ? U
       : never
-    : never;
+    : never
 
 export type Enums<
   PublicEnumNameOrOptions extends
@@ -485,7 +485,7 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -500,4 +500,4 @@ export type CompositeTypes<
   ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never
