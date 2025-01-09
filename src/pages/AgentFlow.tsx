@@ -71,8 +71,7 @@ const AgentFlow = () => {
   const loadAgents = async () => {
     const { data, error } = await supabase
       .from('agents')
-      .select('*')
-      .returns<Agent[]>();
+      .select('*');
     
     if (error) {
       toast({
@@ -88,7 +87,7 @@ const AgentFlow = () => {
         id: agent.id,
         name: agent.name,
         type: agent.type,
-        systemRole: agent.system_role, // Map from database column to frontend property
+        systemRole: agent.system_role, // Map database column to frontend property
         prompt: agent.prompt,
         features: agent.features
       }));
@@ -102,7 +101,7 @@ const AgentFlow = () => {
       .insert([{
         name: defaultAgent.name,
         type: defaultAgent.type,
-        system_role: defaultAgent.systemRole, // Map from frontend property to database column
+        system_role: defaultAgent.systemRole, // Map frontend property to database column
         prompt: defaultAgent.prompt,
         features: defaultAgent.features,
       }])
@@ -123,7 +122,7 @@ const AgentFlow = () => {
         id: data.id,
         name: data.name,
         type: data.type,
-        systemRole: data.system_role, // Map from database column to frontend property
+        systemRole: data.system_role, // Map database column to frontend property
         prompt: data.prompt,
         features: data.features,
       };
@@ -141,7 +140,7 @@ const AgentFlow = () => {
       .update({
         name: updatedAgent.name,
         type: updatedAgent.type,
-        system_role: updatedAgent.systemRole, // Map from frontend property to database column
+        system_role: updatedAgent.systemRole, // Map frontend property to database column
         prompt: updatedAgent.prompt,
         features: updatedAgent.features,
       })
