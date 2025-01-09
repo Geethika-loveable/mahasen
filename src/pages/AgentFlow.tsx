@@ -1,26 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Brain, ArrowDown } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-
-interface Agent {
-  id: string;
-  name: string;
-  type: string;
-  systemRole: string;
-  prompt: string;
-  features: string[];
-}
+import { ArrowDown } from "lucide-react";
+import { AgentCard } from "@/components/agent-flow/AgentCard";
+import { AgentDialog } from "@/components/agent-flow/AgentDialog";
+import { Agent } from "@/types/agent";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const defaultAgents: Agent[] = [
   {
@@ -76,33 +61,92 @@ const defaultAgents: Agent[] = [
 const AgentFlow = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const getAgentColor = (type: string) => {
-    switch (type) {
-      case "welcome":
-        return "bg-blue-100 border-blue-300 dark:bg-blue-950 dark:border-blue-800";
-      case "sales":
-        return "bg-green-100 border-green-300 dark:bg-green-950 dark:border-green-800";
-      case "knowledge":
-        return "bg-purple-100 border-purple-300 dark:bg-purple-950 dark:border-purple-800";
-      case "support":
-        return "bg-orange-100 border-orange-300 dark:bg-orange-950 dark:border-orange-800";
-      default:
-        return "bg-gray-100 border-gray-300 dark:bg-gray-800 dark:border-gray-700";
+  useEffect(() => {
+    loadAgents();
+  }, []);
+
+  const loadAgents = async () => {
+    const { data, error } = await supabase
+      .from('agents')
+      .select('*');
+    
+    if (error) {
+      toast({
+        title: "Error loading agents",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setAgents(data);
     }
   };
 
-  const handleAddAgent = (defaultAgent: Agent) => {
-    if (!agents.find(a => a.id === defaultAgent.id)) {
-      setAgents([...agents, { ...defaultAgent }]);
+  const handleAddAgent = async (defaultAgent: Agent) => {
+    const { data, error } = await supabase
+      .from('agents')
+      .insert([{
+        name: defaultAgent.name,
+        type: defaultAgent.type,
+        system_role: defaultAgent.systemRole,
+        prompt: defaultAgent.prompt,
+        features: defaultAgent.features,
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        title: "Error adding agent",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (data) {
+      setAgents([...agents, data]);
+      toast({
+        title: "Agent added",
+        description: `${defaultAgent.name} has been added successfully.`,
+      });
     }
   };
 
-  const handleUpdateAgent = (updatedAgent: Agent) => {
+  const handleUpdateAgent = async (updatedAgent: Agent) => {
+    const { error } = await supabase
+      .from('agents')
+      .update({
+        name: updatedAgent.name,
+        type: updatedAgent.type,
+        system_role: updatedAgent.systemRole,
+        prompt: updatedAgent.prompt,
+        features: updatedAgent.features,
+      })
+      .eq('id', updatedAgent.id);
+
+    if (error) {
+      toast({
+        title: "Error updating agent",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setAgents(agents.map(agent => 
       agent.id === updatedAgent.id ? updatedAgent : agent
     ));
     setSelectedAgent(null);
+    toast({
+      title: "Agent updated",
+      description: `${updatedAgent.name} has been updated successfully.`,
+    });
   };
 
   return (
@@ -117,93 +161,53 @@ const AgentFlow = () => {
           </div>
         </div>
 
-        {/* Main Agent Box */}
-        <div className="flex flex-col items-center gap-4 mb-8">
-          <Card className="w-48 h-48 p-4 flex flex-col items-center justify-center text-center border-2">
+        {/* Main Agent Box with Hierarchy Lines */}
+        <div className="flex flex-col items-center gap-4 mb-8 relative">
+          <Card className="w-48 h-48 p-4 flex flex-col items-center justify-center text-center border-2 bg-primary/10">
             <h3 className="font-semibold mb-2">Mahasen</h3>
           </Card>
           <ArrowDown className="h-8 w-8 text-slate-400" />
+          
+          {/* Agent Grid with Dotted Lines */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            {/* Vertical dotted line from Mahasen */}
+            <div className="absolute -top-12 left-1/2 w-px h-12 border-l-2 border-dotted border-gray-300 dark:border-gray-700" />
+            
+            {/* Horizontal dotted line */}
+            <div className="absolute top-24 left-0 w-full h-px border-t-2 border-dotted border-gray-300 dark:border-gray-700" />
+
+            {defaultAgents.map((defaultAgent) => {
+              const isActive = agents.some(a => a.type === defaultAgent.type);
+              return (
+                <div key={defaultAgent.id} className="flex flex-col items-center">
+                  {/* Vertical dotted line to each agent */}
+                  <div className="h-24 w-px border-l-2 border-dotted border-gray-300 dark:border-gray-700 mb-4" />
+                  <AgentCard
+                    agent={defaultAgent}
+                    isActive={isActive}
+                    onClick={() => {
+                      setSelectedAgent(defaultAgent);
+                      setIsDialogOpen(true);
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Agent Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {defaultAgents.map((defaultAgent) => {
-            const isActive = agents.some(a => a.id === defaultAgent.id);
-            return (
-              <div key={defaultAgent.id} className="flex flex-col items-center">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Card 
-                      className={`w-48 h-48 p-4 cursor-pointer transition-all hover:shadow-lg border-2 ${
-                        isActive ? getAgentColor(defaultAgent.type) : "bg-gray-100 dark:bg-gray-800"
-                      }`}
-                    >
-                      {isActive ? (
-                        <>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Brain className="h-5 w-5" />
-                            <h3 className="font-semibold">{defaultAgent.name}</h3>
-                          </div>
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Click to edit configuration
-                          </p>
-                        </>
-                      ) : (
-                        <div className="h-full flex flex-col items-center justify-center">
-                          <Button variant="ghost" className="flex items-center gap-2">
-                            <Brain className="h-5 w-5" />
-                            Add {defaultAgent.name}
-                          </Button>
-                        </div>
-                      )}
-                    </Card>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {isActive ? "Edit Agent" : "Add Agent"}: {defaultAgent.name}
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="systemRole">System Role</Label>
-                        <Textarea
-                          id="systemRole"
-                          defaultValue={defaultAgent.systemRole}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="prompt">Default Prompt</Label>
-                        <Textarea
-                          id="prompt"
-                          defaultValue={defaultAgent.prompt}
-                          rows={4}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Features</Label>
-                        <ul className="list-disc pl-4 space-y-1">
-                          {defaultAgent.features.map((feature, index) => (
-                            <li key={index} className="text-sm text-slate-600 dark:text-slate-400">
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <Button 
-                        onClick={() => isActive ? handleUpdateAgent(defaultAgent) : handleAddAgent(defaultAgent)}
-                        className="w-full"
-                      >
-                        {isActive ? "Update Agent" : "Add Agent"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            );
-          })}
-        </div>
+        {selectedAgent && (
+          <AgentDialog
+            isOpen={isDialogOpen}
+            onClose={() => {
+              setIsDialogOpen(false);
+              setSelectedAgent(null);
+            }}
+            agent={selectedAgent}
+            isActive={agents.some(a => a.type === selectedAgent.type)}
+            onSave={isActive => isActive ? handleUpdateAgent : handleAddAgent}
+          />
+        )}
       </div>
     </div>
   );
