@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ArrowLeft } from "lucide-react";
 import { AgentCard } from "@/components/agent-flow/AgentCard";
 import { AgentDialog } from "@/components/agent-flow/AgentDialog";
 import { Agent } from "@/types/agent";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { defaultAgents } from "@/components/agent-flow/defaultAgents";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const AgentFlow = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadAgents();
@@ -120,6 +123,14 @@ const AgentFlow = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
+            <Button 
+              variant="ghost" 
+              className="mb-4 text-muted-foreground hover:text-foreground"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
             <h1 className="text-3xl font-bold">Agent Flow</h1>
             <p className="text-slate-600 dark:text-slate-400">
               Design and manage your agent workflows
@@ -129,10 +140,13 @@ const AgentFlow = () => {
 
         {/* Main Agent Box with Arrow */}
         <div className="flex flex-col items-center gap-8">
-          <Card className="w-48 h-48 p-4 flex flex-col items-center justify-center text-center bg-primary/5 border-2 border-primary/20 hover:border-primary/30 transition-colors">
-            <h3 className="font-semibold text-xl mb-2">Mahasen</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">Main Agent</p>
-          </Card>
+          <div className="relative">
+            <div className="absolute inset-0 rounded-lg animate-gradient bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+            <Card className="relative w-48 h-48 p-4 flex flex-col items-center justify-center text-center bg-background border-2 border-transparent hover:scale-105 transition-transform duration-300">
+              <h3 className="font-semibold text-xl mb-2">Mahasen</h3>
+              <p className="text-sm text-muted-foreground">Main Agent</p>
+            </Card>
+          </div>
           
           <ArrowDown className="h-8 w-8 text-primary/50" />
           
