@@ -46,7 +46,7 @@ const defaultAgents: Agent[] = [
   },
   {
     id: "support",
-    name: "Personalized Support Sen",
+    name: "Support Sen",
     type: "support",
     systemRole: "You are a caring and insightful assistant that provides personalized support tailored to the user's history and preferences.",
     prompt: "Hi [Customer Name], welcome back! I see you've recently interacted with [Product/Service]. How can I assist you further with that today?",
@@ -71,7 +71,8 @@ const AgentFlow = () => {
   const loadAgents = async () => {
     const { data, error } = await supabase
       .from('agents')
-      .select('*');
+      .select('*')
+      .returns<Agent[]>();
     
     if (error) {
       toast({
@@ -83,7 +84,15 @@ const AgentFlow = () => {
     }
 
     if (data) {
-      setAgents(data);
+      const formattedAgents: Agent[] = data.map(agent => ({
+        id: agent.id,
+        name: agent.name,
+        type: agent.type,
+        systemRole: agent.system_role,
+        prompt: agent.prompt,
+        features: agent.features
+      }));
+      setAgents(formattedAgents);
     }
   };
 
@@ -110,7 +119,15 @@ const AgentFlow = () => {
     }
 
     if (data) {
-      setAgents([...agents, data]);
+      const newAgent: Agent = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        systemRole: data.system_role,
+        prompt: data.prompt,
+        features: data.features,
+      };
+      setAgents([...agents, newAgent]);
       toast({
         title: "Agent added",
         description: `${defaultAgent.name} has been added successfully.`,
@@ -177,16 +194,16 @@ const AgentFlow = () => {
             <div className="absolute top-24 left-0 w-full h-px border-t-2 border-dotted border-gray-300 dark:border-gray-700" />
 
             {defaultAgents.map((defaultAgent) => {
-              const isActive = agents.some(a => a.type === defaultAgent.type);
+              const existingAgent = agents.find(a => a.type === defaultAgent.type);
               return (
                 <div key={defaultAgent.id} className="flex flex-col items-center">
                   {/* Vertical dotted line to each agent */}
                   <div className="h-24 w-px border-l-2 border-dotted border-gray-300 dark:border-gray-700 mb-4" />
                   <AgentCard
-                    agent={defaultAgent}
-                    isActive={isActive}
+                    agent={existingAgent || defaultAgent}
+                    isActive={!!existingAgent}
                     onClick={() => {
-                      setSelectedAgent(defaultAgent);
+                      setSelectedAgent(existingAgent || defaultAgent);
                       setIsDialogOpen(true);
                     }}
                   />
@@ -205,7 +222,14 @@ const AgentFlow = () => {
             }}
             agent={selectedAgent}
             isActive={agents.some(a => a.type === selectedAgent.type)}
-            onSave={isActive => isActive ? handleUpdateAgent : handleAddAgent}
+            onSave={(agent) => {
+              const isActive = agents.some(a => a.type === agent.type);
+              if (isActive) {
+                handleUpdateAgent(agent);
+              } else {
+                handleAddAgent(agent);
+              }
+            }}
           />
         )}
       </div>
