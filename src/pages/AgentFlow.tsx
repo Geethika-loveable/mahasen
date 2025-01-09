@@ -6,57 +6,7 @@ import { AgentDialog } from "@/components/agent-flow/AgentDialog";
 import { Agent } from "@/types/agent";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-
-const defaultAgents: Agent[] = [
-  {
-    id: "welcome",
-    name: "Welcome Sen",
-    type: "welcome",
-    systemRole: "You are a friendly, proactive assistant designed to greet users and offer initial assistance on the website or app.",
-    prompt: "Hi there! Welcome to [Your Company Name]. How can I assist you today? You can ask me about our products, services, or anything else you need help with!",
-    features: [
-      "Detects user behavior",
-      "Proactively suggests categories",
-      "Personalizes greetings"
-    ]
-  },
-  {
-    id: "sales",
-    name: "Sales Sen",
-    type: "sales",
-    systemRole: "You are a persuasive yet helpful assistant skilled at upselling and cross-selling products based on the user's preferences and browsing history.",
-    prompt: "I noticed you're interested in [specific product or category]. Would you like to see related products or learn about special offers?",
-    features: [
-      "Recommends products based on history",
-      "Offers discounts and bundles",
-      "Drives conversions"
-    ]
-  },
-  {
-    id: "knowledge",
-    name: "Knowledge Sen",
-    type: "knowledge",
-    systemRole: "You are a highly capable assistant with access to a retrieval-augmented generation (RAG) system. You retrieve relevant information from a database or documents to answer complex queries.",
-    prompt: "What specific information are you looking for? I can help by retrieving the most relevant documents or guides for you.",
-    features: [
-      "Uses RAG for document retrieval",
-      "Generates accurate summaries",
-      "Provides contextual answers"
-    ]
-  },
-  {
-    id: "support",
-    name: "Support Sen",
-    type: "support",
-    systemRole: "You are a caring and insightful assistant that provides personalized support tailored to the user's history and preferences.",
-    prompt: "Hi [Customer Name], welcome back! I see you've recently interacted with [Product/Service]. How can I assist you further with that today?",
-    features: [
-      "Leverages user history",
-      "Builds rapport with users",
-      "Provides tailored support"
-    ]
-  }
-];
+import { defaultAgents } from "@/components/agent-flow/defaultAgents";
 
 const AgentFlow = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -87,7 +37,7 @@ const AgentFlow = () => {
         id: agent.id,
         name: agent.name,
         type: agent.type,
-        systemRole: agent.system_role, // Map database column to frontend property
+        systemRole: agent.system_role,
         prompt: agent.prompt,
         features: agent.features
       }));
@@ -101,7 +51,7 @@ const AgentFlow = () => {
       .insert([{
         name: defaultAgent.name,
         type: defaultAgent.type,
-        system_role: defaultAgent.systemRole, // Map frontend property to database column
+        system_role: defaultAgent.systemRole,
         prompt: defaultAgent.prompt,
         features: defaultAgent.features,
       }])
@@ -122,7 +72,7 @@ const AgentFlow = () => {
         id: data.id,
         name: data.name,
         type: data.type,
-        systemRole: data.system_role, // Map database column to frontend property
+        systemRole: data.system_role,
         prompt: data.prompt,
         features: data.features,
       };
@@ -140,7 +90,7 @@ const AgentFlow = () => {
       .update({
         name: updatedAgent.name,
         type: updatedAgent.type,
-        system_role: updatedAgent.systemRole, // Map frontend property to database column
+        system_role: updatedAgent.systemRole,
         prompt: updatedAgent.prompt,
         features: updatedAgent.features,
       })
@@ -177,36 +127,29 @@ const AgentFlow = () => {
           </div>
         </div>
 
-        {/* Main Agent Box with Hierarchy Lines */}
-        <div className="flex flex-col items-center gap-4 mb-8 relative">
-          <Card className="w-48 h-48 p-4 flex flex-col items-center justify-center text-center border-2 bg-primary/10">
-            <h3 className="font-semibold mb-2">Mahasen</h3>
+        {/* Main Agent Box with Arrow */}
+        <div className="flex flex-col items-center gap-8">
+          <Card className="w-48 h-48 p-4 flex flex-col items-center justify-center text-center bg-primary/5 border-2 border-primary/20 hover:border-primary/30 transition-colors">
+            <h3 className="font-semibold text-xl mb-2">Mahasen</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Main Agent</p>
           </Card>
-          <ArrowDown className="h-8 w-8 text-slate-400" />
           
-          {/* Agent Grid with Dotted Lines */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-            {/* Vertical dotted line from Mahasen */}
-            <div className="absolute -top-12 left-1/2 w-px h-12 border-l-2 border-dotted border-gray-300 dark:border-gray-700" />
-            
-            {/* Horizontal dotted line */}
-            <div className="absolute top-24 left-0 w-full h-px border-t-2 border-dotted border-gray-300 dark:border-gray-700" />
-
+          <ArrowDown className="h-8 w-8 text-primary/50" />
+          
+          {/* Agent Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {defaultAgents.map((defaultAgent) => {
               const existingAgent = agents.find(a => a.type === defaultAgent.type);
               return (
-                <div key={defaultAgent.id} className="flex flex-col items-center">
-                  {/* Vertical dotted line to each agent */}
-                  <div className="h-24 w-px border-l-2 border-dotted border-gray-300 dark:border-gray-700 mb-4" />
-                  <AgentCard
-                    agent={existingAgent || defaultAgent}
-                    isActive={!!existingAgent}
-                    onClick={() => {
-                      setSelectedAgent(existingAgent || defaultAgent);
-                      setIsDialogOpen(true);
-                    }}
-                  />
-                </div>
+                <AgentCard
+                  key={defaultAgent.id}
+                  agent={existingAgent || defaultAgent}
+                  isActive={!!existingAgent}
+                  onClick={() => {
+                    setSelectedAgent(existingAgent || defaultAgent);
+                    setIsDialogOpen(true);
+                  }}
+                />
               );
             })}
           </div>
