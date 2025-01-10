@@ -72,10 +72,14 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
       {/* Glowing gradient background */}
-      <div className="absolute top-0 left-0 right-0 h-[30vh] pointer-events-none">
-        <div className="absolute inset-0 animate-gradient bg-gradient-to-b from-purple-500/20 via-pink-500/10 to-transparent dark:from-purple-500/10 dark:via-pink-500/5 dark:to-transparent"></div>
+      <div className="absolute top-0 left-0 right-0 h-[15vh] pointer-events-none">
+        <div className="absolute inset-0 animate-gradient bg-gradient-to-b from-purple-500/40 via-pink-500/30 to-transparent 
+          before:absolute before:inset-0 before:bg-gradient-to-r before:from-blue-500/30 before:via-purple-500/30 before:to-pink-500/30 before:animate-gradient 
+          after:absolute after:inset-0 after:bg-gradient-to-l after:from-indigo-500/30 after:via-violet-500/30 after:to-fuchsia-500/30 after:animate-gradient-reverse
+          blur-[50px] opacity-80">
+        </div>
       </div>
 
       {/* Content */}
