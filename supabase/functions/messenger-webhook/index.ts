@@ -22,43 +22,69 @@ serve(async (req) => {
     const token = url.searchParams.get('hub.verify_token');
     const challenge = url.searchParams.get('hub.challenge');
 
-    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('Webhook verified successfully');
-      return new Response(challenge, {
-        status: 200,
+    console.log('Received verification request:', { mode, token, challenge });
+
+    if (!mode || !token) {
+      console.error('Missing mode or token');
+      return new Response('Missing parameters', { 
+        status: 400,
         headers: { ...corsHeaders }
       });
     }
 
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+      console.log('Webhook verified successfully');
+      // Important: Return challenge as plain text, not JSON
+      return new Response(challenge, {
+        status: 200,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'text/plain'
+        }
+      });
+    }
+
+    console.error('Verification failed - Invalid verify token');
     return new Response('Verification failed', {
       status: 403,
       headers: { ...corsHeaders }
     });
   }
 
-  try {
-    const body = await req.json();
-    console.log('Received webhook event:', JSON.stringify(body, null, 2));
+  // Handle incoming webhook events
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      console.log('Received webhook event:', JSON.stringify(body, null, 2));
 
-    // Handle messages
-    if (body.object === 'page') {
-      for (const entry of body.entry) {
-        for (const event of entry.messaging) {
-          if (event.message) {
-            await processMessage(event);
+      // Verify this is a page webhook
+      if (body.object === 'page') {
+        for (const entry of body.entry) {
+          // Handle each messaging event
+          if (entry.messaging) {
+            for (const event of entry.messaging) {
+              if (event.message) {
+                await processMessage(event);
+              }
+            }
           }
         }
       }
-    }
 
-    return new Response(JSON.stringify({ status: 'ok' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      return new Response(JSON.stringify({ status: 'ok' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error processing webhook:', error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
+
+  return new Response('Method not allowed', { 
+    status: 405,
+    headers: corsHeaders 
+  });
 });
