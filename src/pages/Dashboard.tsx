@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Facebook, Instagram, FileText, Settings, Network } from "lucide-react";
+import { MessageSquare, Facebook, Instagram, FileText, Settings, Network, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -72,8 +72,14 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 relative">
+      {/* Glowing gradient background */}
+      <div className="absolute top-0 left-0 right-0 h-[30vh] pointer-events-none">
+        <div className="absolute inset-0 animate-gradient bg-gradient-to-b from-purple-500/20 via-pink-500/10 to-transparent dark:from-purple-500/10 dark:via-pink-500/5 dark:to-transparent"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold">Mahasen AI</h1>
