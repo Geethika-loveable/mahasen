@@ -1,0 +1,59 @@
+export async function storeConversation(
+  supabase: any,
+  userId: string,
+  userName: string,
+  userMessage: string,
+  platform: 'facebook' | 'whatsapp' | 'instagram'
+) {
+  try {
+    // Check if conversation exists
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('contact_number', userId)
+      .eq('platform', platform)
+      .single();
+
+    if (convError && convError.code !== 'PGRST116') {
+      throw convError;
+    }
+
+    let conversationId;
+    if (!conversation) {
+      // Create new conversation
+      const { data: newConversation, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          contact_number: userId,
+          contact_name: userName,
+          platform: platform,
+          ai_enabled: true
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+      conversationId = newConversation.id;
+    } else {
+      conversationId = conversation.id;
+    }
+
+    // Store user message
+    const { error: msgError } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        content: userMessage,
+        status: 'received',
+        sender_name: userName,
+        sender_number: userId,
+        read: false
+      });
+
+    if (msgError) throw msgError;
+    return conversationId;
+  } catch (error) {
+    console.error('Error storing conversation:', error);
+    throw error;
+  }
+}
