@@ -90,46 +90,6 @@
   }
 }
 
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    background-position: 100% 50%;
-    transform: rotate(2deg) scale(1.1);
-  }
-  100% {
-    background-position: 0% 50%;
-    transform: rotate(0deg) scale(1);
-  }
-}
-
-@keyframes gradient-reverse {
-  0% {
-    background-position: 100% 50%;
-    transform: rotate(0deg) scale(1.1);
-  }
-  50% {
-    background-position: 0% 50%;
-    transform: rotate(-2deg) scale(1);
-  }
-  100% {
-    background-position: 100% 50%;
-    transform: rotate(0deg) scale(1.1);
-  }
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 8s ease infinite;
-}
-
-.animate-gradient-reverse {
-  background-size: 200% 200%;
-  animation: gradient-reverse 8s ease infinite;
-}
-
 @layer base {
   * {
     @apply border-border;
@@ -140,18 +100,18 @@
   }
 }
 
-@keyframes logo-spin {
-  from {
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
     transform: rotate(0deg);
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    background-position: 100% 50%;
+    transform: rotate(3deg);
   }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+  100% {
+    background-position: 0% 50%;
+    transform: rotate(0deg);
   }
 }
 
