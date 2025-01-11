@@ -209,6 +209,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tickets: {
+        Row: {
+          body: string
+          created_at: string
+          customer_name: string
+          id: number
+          platform: Database["public"]["Enums"]["platform_type"]
+          status: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          type: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          customer_name: string
+          id?: number
+          platform: Database["public"]["Enums"]["platform_type"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title: string
+          type: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          customer_name?: string
+          id?: number
+          platform?: Database["public"]["Enums"]["platform_type"]
+          status?: Database["public"]["Enums"]["ticket_status"]
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -422,6 +455,7 @@ export type Database = {
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
       message_status: "sent" | "received"
       platform_type: "whatsapp" | "facebook" | "instagram"
+      ticket_status: "New" | "In Progress" | "Escalated" | "Completed"
     }
     CompositeTypes: {
       [_ in never]: never

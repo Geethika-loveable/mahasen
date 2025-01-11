@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Facebook, Instagram, FileText, Network } from "lucide-react";
+import { MessageSquare, Facebook, Instagram, FileText, Network, Ticket } from "lucide-react";
 import { PlatformCard } from "@/components/dashboard/PlatformCard";
 import { UtilityCard } from "@/components/dashboard/UtilityCard";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -80,7 +80,7 @@ const Dashboard = () => {
           onSignOut={handleSignOut}
         />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {platforms.map((platform) => (
             <PlatformCard
               key={platform.id}
@@ -90,7 +90,9 @@ const Dashboard = () => {
               onSelect={handlePlatformSelect}
             />
           ))}
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <UtilityCard
             icon={FileText}
             title="Knowledge Base"
@@ -109,6 +111,16 @@ const Dashboard = () => {
             onClick={() => navigate("/agent-flow")}
             colorClass="text-indigo-600"
             bgColorClass="bg-indigo-50 dark:bg-indigo-950/20"
+          />
+
+          <UtilityCard
+            icon={Ticket}
+            title="Tickets"
+            description="Manage customer support tickets"
+            buttonText="View Tickets"
+            onClick={() => navigate("/tickets")}
+            colorClass="text-orange-600"
+            bgColorClass="bg-orange-50 dark:bg-orange-950/20"
           />
         </div>
       </div>
