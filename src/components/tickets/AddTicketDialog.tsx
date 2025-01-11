@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 
+// Define the schema to match exactly what Supabase expects
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   customer_name: z.string().min(1, "Customer name is required"),
@@ -39,7 +40,18 @@ const formSchema = z.object({
   body: z.string().min(1, "Description is required"),
 });
 
+// This type will be used for the form values
 type FormValues = z.infer<typeof formSchema>;
+
+// This type matches exactly what Supabase expects
+type TicketInsert = {
+  title: string;
+  customer_name: string;
+  platform: "whatsapp" | "facebook" | "instagram";
+  type: string;
+  status: "New" | "In Progress" | "Escalated" | "Completed";
+  body: string;
+};
 
 interface AddTicketDialogProps {
   open: boolean;
@@ -66,9 +78,19 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
+      // Create a properly typed object that matches what Supabase expects
+      const ticketData: TicketInsert = {
+        title: values.title,
+        customer_name: values.customer_name,
+        platform: values.platform,
+        type: values.type,
+        status: values.status,
+        body: values.body,
+      };
+
       const { data, error } = await supabase
         .from("tickets")
-        .insert(values)
+        .insert(ticketData)
         .select()
         .single();
 
