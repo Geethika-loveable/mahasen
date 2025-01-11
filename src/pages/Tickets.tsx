@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { format } from "date-fns";
+import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 
 interface Ticket {
   id: number;
@@ -42,6 +43,7 @@ const Tickets = () => {
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -66,16 +68,22 @@ const Tickets = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            className="mr-4"
-            onClick={() => navigate("/dashboard")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              className="mr-4"
+              onClick={() => navigate("/dashboard")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <h1 className="text-3xl font-bold">Support Tickets</h1>
+          </div>
+          <Button onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Ticket
           </Button>
-          <h1 className="text-3xl font-bold">Support Tickets</h1>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
@@ -131,6 +139,11 @@ const Tickets = () => {
           </Table>
         </div>
       </div>
+      <AddTicketDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen}
+        onTicketAdded={(newTicket) => setTickets((prev) => [newTicket, ...prev])}
+      />
     </div>
   );
 };
