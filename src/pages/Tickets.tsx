@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowLeft, Plus, ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
 import { format } from "date-fns";
 import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 
@@ -74,13 +74,11 @@ const Tickets = () => {
   const handleSort = (key: keyof Ticket) => {
     setSortConfig(currentConfig => {
       if (currentConfig?.key === key) {
-        // Toggle direction if same key
         return {
           key,
           direction: currentConfig.direction === 'asc' ? 'desc' : 'asc'
         };
       }
-      // Default to descending for new sort key
       return { key, direction: 'desc' };
     });
   };
@@ -100,9 +98,9 @@ const Tickets = () => {
     if (sortConfig?.key !== columnKey) return null;
     
     return sortConfig.direction === 'asc' ? (
-      <ArrowUp className="inline h-4 w-4 text-gray-500 ml-1" />
+      <ArrowUpNarrowWide className="inline h-3 w-3 text-gray-500 ml-1" />
     ) : (
-      <ArrowDown className="inline h-4 w-4 text-gray-500 ml-1" />
+      <ArrowDownNarrowWide className="inline h-3 w-3 text-gray-500 ml-1" />
     );
   };
 
@@ -131,25 +129,25 @@ const Tickets = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead onClick={() => handleSort('id')} className="cursor-pointer">
+                <TableHead className="w-20 cursor-pointer" onClick={() => handleSort('id')}>
                   Ticket ID {getSortIcon('id')}
                 </TableHead>
-                <TableHead onClick={() => handleSort('title')} className="cursor-pointer">
+                <TableHead className="w-48 cursor-pointer" onClick={() => handleSort('title')}>
                   Title {getSortIcon('title')}
                 </TableHead>
-                <TableHead onClick={() => handleSort('customer_name')} className="cursor-pointer">
+                <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('customer_name')}>
                   Customer Name {getSortIcon('customer_name')}
                 </TableHead>
-                <TableHead onClick={() => handleSort('platform')} className="cursor-pointer">
+                <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('platform')}>
                   Platform {getSortIcon('platform')}
                 </TableHead>
-                <TableHead onClick={() => handleSort('type')} className="cursor-pointer">
+                <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('type')}>
                   Type {getSortIcon('type')}
                 </TableHead>
-                <TableHead onClick={() => handleSort('status')} className="cursor-pointer">
+                <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('status')}>
                   Status {getSortIcon('status')}
                 </TableHead>
-                <TableHead onClick={() => handleSort('created_at')} className="cursor-pointer">
+                <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('created_at')}>
                   Date & Time {getSortIcon('created_at')}
                 </TableHead>
               </TableRow>
