@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, ArrowUp, ArrowDown } from "lucide-react";
 import { format } from "date-fns";
 import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 
@@ -25,6 +25,11 @@ interface Ticket {
   created_at: string;
   body: string;
 }
+
+type SortConfig = {
+  key: keyof Ticket;
+  direction: 'asc' | 'desc';
+} | null;
 
 const statusColors = {
   New: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
@@ -44,6 +49,7 @@ const Tickets = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'id', direction: 'asc' });
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -51,7 +57,7 @@ const Tickets = () => {
         const { data, error } = await supabase
           .from("tickets")
           .select("*")
-          .order("created_at", { ascending: false });
+          .order('id', { ascending: true });
 
         if (error) throw error;
         setTickets(data || []);
@@ -64,6 +70,41 @@ const Tickets = () => {
 
     fetchTickets();
   }, []);
+
+  const handleSort = (key: keyof Ticket) => {
+    setSortConfig(currentConfig => {
+      if (currentConfig?.key === key) {
+        // Toggle direction if same key
+        return {
+          key,
+          direction: currentConfig.direction === 'asc' ? 'desc' : 'asc'
+        };
+      }
+      // Default to descending for new sort key
+      return { key, direction: 'desc' };
+    });
+  };
+
+  const sortedTickets = [...tickets].sort((a, b) => {
+    if (!sortConfig) return 0;
+
+    const { key, direction } = sortConfig;
+    const modifier = direction === 'asc' ? 1 : -1;
+
+    if (a[key] < b[key]) return -1 * modifier;
+    if (a[key] > b[key]) return 1 * modifier;
+    return 0;
+  });
+
+  const getSortIcon = (columnKey: keyof Ticket) => {
+    if (sortConfig?.key !== columnKey) return null;
+    
+    return sortConfig.direction === 'asc' ? (
+      <ArrowUp className="inline h-4 w-4 text-gray-500 ml-1" />
+    ) : (
+      <ArrowDown className="inline h-4 w-4 text-gray-500 ml-1" />
+    );
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
@@ -90,13 +131,27 @@ const Tickets = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ticket ID</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Customer Name</TableHead>
-                <TableHead>Platform</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date & Time</TableHead>
+                <TableHead onClick={() => handleSort('id')} className="cursor-pointer">
+                  Ticket ID {getSortIcon('id')}
+                </TableHead>
+                <TableHead onClick={() => handleSort('title')} className="cursor-pointer">
+                  Title {getSortIcon('title')}
+                </TableHead>
+                <TableHead onClick={() => handleSort('customer_name')} className="cursor-pointer">
+                  Customer Name {getSortIcon('customer_name')}
+                </TableHead>
+                <TableHead onClick={() => handleSort('platform')} className="cursor-pointer">
+                  Platform {getSortIcon('platform')}
+                </TableHead>
+                <TableHead onClick={() => handleSort('type')} className="cursor-pointer">
+                  Type {getSortIcon('type')}
+                </TableHead>
+                <TableHead onClick={() => handleSort('status')} className="cursor-pointer">
+                  Status {getSortIcon('status')}
+                </TableHead>
+                <TableHead onClick={() => handleSort('created_at')} className="cursor-pointer">
+                  Date & Time {getSortIcon('created_at')}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -106,14 +161,14 @@ const Tickets = () => {
                     Loading tickets...
                   </TableCell>
                 </TableRow>
-              ) : tickets.length === 0 ? (
+              ) : sortedTickets.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8">
                     No tickets found
                   </TableCell>
                 </TableRow>
               ) : (
-                tickets.map((ticket) => (
+                sortedTickets.map((ticket) => (
                   <TableRow key={ticket.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800">
                     <TableCell>#{ticket.id}</TableCell>
                     <TableCell className="font-medium">{ticket.title}</TableCell>
