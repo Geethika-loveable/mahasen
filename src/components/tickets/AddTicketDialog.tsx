@@ -39,6 +39,8 @@ const formSchema = z.object({
   body: z.string().min(1, "Description is required"),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 interface AddTicketDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,7 +51,7 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -61,12 +63,12 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase
         .from("tickets")
-        .insert([values])
+        .insert(values)
         .select()
         .single();
 
