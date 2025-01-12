@@ -42,9 +42,19 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
   const onSubmit = async (values: TicketFormValues) => {
     setIsSubmitting(true);
     try {
+      // Ensure all required fields are present and match the database schema
+      const ticketData = {
+        title: values.title,
+        customer_name: values.customer_name,
+        platform: values.platform,
+        type: values.type,
+        status: values.status,
+        body: values.body,
+      };
+
       const { data, error } = await supabase
         .from("tickets")
-        .insert(values)
+        .insert(ticketData)
         .select()
         .single();
 

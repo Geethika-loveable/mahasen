@@ -5,7 +5,7 @@ export const ticketFormSchema = z.object({
   customer_name: z.string().min(1, "Customer name is required"),
   platform: z.enum(["whatsapp", "facebook", "instagram"]),
   type: z.string().min(1, "Type is required"),
-  status: z.enum(["New", "In Progress", "Escalated", "Completed"]),
+  status: z.enum(["New", "In Progress", "Escalated", "Completed"]).default("New"),
   body: z.string().min(1, "Description is required"),
 });
 
