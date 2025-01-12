@@ -1,3 +1,12 @@
+import { AgentTables } from './agents';
+import { AiSettingsTables } from './ai-settings';
+import { ConversationTables } from './conversations';
+import { KnowledgeBaseTables } from './knowledge-base';
+import { MessageTables } from './messages';
+import { MessengerTables } from './messenger';
+import { TicketTables } from './tickets';
+import { DatabaseFunctions } from './database-functions';
+
 export type Json =
   | string
   | number
