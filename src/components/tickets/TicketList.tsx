@@ -9,6 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
 import { format } from "date-fns";
+import { useState } from "react";
+import { TicketDetailsDialog } from "./TicketDetailsDialog";
 
 interface Ticket {
   id: number;
@@ -45,6 +47,9 @@ const platformColors = {
 };
 
 export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: TicketListProps) => {
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   const handleSort = (key: keyof Ticket) => {
     onSortChange({
       key,
@@ -62,6 +67,11 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
     );
   };
 
+  const handleTicketClick = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setDetailsOpen(true);
+  };
+
   const sortedTickets = [...tickets].sort((a, b) => {
     const modifier = sortConfig.direction === 'asc' ? 1 : -1;
     if (a[sortConfig.key] < b[sortConfig.key]) return -1 * modifier;
@@ -70,69 +80,81 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
   });
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-20 cursor-pointer" onClick={() => handleSort('id')}>
-            ID {getSortIcon('id')}
-          </TableHead>
-          <TableHead className="w-48 cursor-pointer" onClick={() => handleSort('title')}>
-            Title {getSortIcon('title')}
-          </TableHead>
-          <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('customer_name')}>
-            Customer Name {getSortIcon('customer_name')}
-          </TableHead>
-          <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('platform')}>
-            Platform {getSortIcon('platform')}
-          </TableHead>
-          <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('type')}>
-            Type {getSortIcon('type')}
-          </TableHead>
-          <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('status')}>
-            Status {getSortIcon('status')}
-          </TableHead>
-          <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('created_at')}>
-            Date & Time {getSortIcon('created_at')}
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {loading ? (
+    <>
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={7} className="text-center py-8">
-              Loading tickets...
-            </TableCell>
+            <TableHead className="w-20 cursor-pointer" onClick={() => handleSort('id')}>
+              ID {getSortIcon('id')}
+            </TableHead>
+            <TableHead className="w-48 cursor-pointer" onClick={() => handleSort('title')}>
+              Title {getSortIcon('title')}
+            </TableHead>
+            <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('customer_name')}>
+              Customer Name {getSortIcon('customer_name')}
+            </TableHead>
+            <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('platform')}>
+              Platform {getSortIcon('platform')}
+            </TableHead>
+            <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('type')}>
+              Type {getSortIcon('type')}
+            </TableHead>
+            <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('status')}>
+              Status {getSortIcon('status')}
+            </TableHead>
+            <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('created_at')}>
+              Date & Time {getSortIcon('created_at')}
+            </TableHead>
           </TableRow>
-        ) : sortedTickets.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={7} className="text-center py-8">
-              No tickets found
-            </TableCell>
-          </TableRow>
-        ) : (
-          sortedTickets.map((ticket) => (
-            <TableRow key={ticket.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800">
-              <TableCell>#{ticket.id}</TableCell>
-              <TableCell className="font-medium">{ticket.title}</TableCell>
-              <TableCell>{ticket.customer_name}</TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={platformColors[ticket.platform]}>
-                  {ticket.platform}
-                </Badge>
-              </TableCell>
-              <TableCell>{ticket.type}</TableCell>
-              <TableCell>
-                <Badge variant="secondary" className={statusColors[ticket.status]}>
-                  {ticket.status}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {format(new Date(ticket.created_at), "MMM d, yyyy HH:mm")}
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8">
+                Loading tickets...
               </TableCell>
             </TableRow>
-          ))
-        )}
-      </TableBody>
-    </Table>
+          ) : sortedTickets.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8">
+                No tickets found
+              </TableCell>
+            </TableRow>
+          ) : (
+            sortedTickets.map((ticket) => (
+              <TableRow 
+                key={ticket.id} 
+                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800"
+                onClick={() => handleTicketClick(ticket)}
+              >
+                <TableCell>#{ticket.id}</TableCell>
+                <TableCell className="font-medium">{ticket.title}</TableCell>
+                <TableCell>{ticket.customer_name}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className={platformColors[ticket.platform]}>
+                    {ticket.platform}
+                  </Badge>
+                </TableCell>
+                <TableCell>{ticket.type}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className={statusColors[ticket.status]}>
+                    {ticket.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  {format(new Date(ticket.created_at), "MMM d, yyyy HH:mm")}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+
+      <TicketDetailsDialog
+        ticket={selectedTicket}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
+    </>
   );
 };
