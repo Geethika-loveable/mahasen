@@ -33,19 +33,21 @@ export const AgentDialog = ({ isOpen, onClose, agent, isActive, onSave }: AgentD
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="systemRole">System Role</Label>
+            <Label htmlFor="systemRole" className="text-[#ea384c]">System Role</Label>
             <Textarea
               id="systemRole"
               defaultValue={agent.systemRole}
               rows={3}
+              className="border-[#ea384c] focus-visible:ring-[#ea384c]"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="prompt">Default Prompt</Label>
+            <Label htmlFor="prompt" className="text-[#ea384c]">Default Prompt</Label>
             <Textarea
               id="prompt"
               defaultValue={agent.prompt}
               rows={4}
+              className="border-[#ea384c] focus-visible:ring-[#ea384c]"
             />
           </div>
           <div className="space-y-2">
@@ -60,7 +62,7 @@ export const AgentDialog = ({ isOpen, onClose, agent, isActive, onSave }: AgentD
           </div>
           <Button 
             onClick={handleSave}
-            className="w-full"
+            className="w-full bg-[#ea384c] hover:bg-[#ea384c]/90"
           >
             {isActive ? "Update Agent" : "Add Agent"}
           </Button>
