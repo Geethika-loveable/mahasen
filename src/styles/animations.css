@@ -1,29 +1,48 @@
 @keyframes gradient {
   0% {
     background-position: 0% 50%;
-    transform: rotate(0deg);
+    transform: rotate(0deg) scale(1);
   }
   50% {
     background-position: 100% 50%;
-    transform: rotate(3deg);
+    transform: rotate(3deg) scale(1.05);
   }
   100% {
     background-position: 0% 50%;
-    transform: rotate(0deg);
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes gradient-xy {
+  0% {
+    background-size: 400% 400%;
+    background-position: 0% 0%;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: 100% 100%;
+  }
+  100% {
+    background-size: 400% 400%;
+    background-position: 0% 0%;
   }
 }
 
 .animate-gradient {
   background-size: 300% 300%;
   animation: gradient 8s ease infinite;
-  padding: 3px;
-  border-radius: 0.5rem;
-  filter: blur(4px);
+  padding: 4px;
+  border-radius: 0.75rem;
+  filter: blur(8px);
   opacity: 0.9;
   transition: all 0.3s ease;
 }
 
+.animate-gradient-xy {
+  animation: gradient-xy 15s ease infinite;
+}
+
 .animate-gradient:hover {
-  filter: blur(6px);
+  filter: blur(12px);
   opacity: 1;
 }
