@@ -61,8 +61,9 @@ const App = () => {
         }
         
         if (mounted) {
-          setIsAuthenticated(!!session);
-          if (!session) {
+          const hasValidSession = !!session;
+          setIsAuthenticated(hasValidSession);
+          if (!hasValidSession) {
             queryClient.clear();
           }
         }
@@ -86,41 +87,45 @@ const App = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        console.log("Auth state changed:", event);
-        
-        switch (event) {
-          case 'SIGNED_OUT':
-            setIsAuthenticated(false);
-            queryClient.clear();
-            toast({
-              title: "Signed Out",
-              description: "You have been signed out successfully.",
-            });
-            break;
-            
-          case 'TOKEN_REFRESHED':
-            console.log('Session token refreshed successfully');
-            setIsAuthenticated(true);
-            break;
-            
-          case 'SIGNED_IN':
-            console.log('User signed in successfully');
-            setIsAuthenticated(true);
-            break;
-            
-          case 'USER_UPDATED':
-            console.log('User data updated');
-            setIsAuthenticated(!!session);
-            break;
-            
-          default:
-            setIsAuthenticated(!!session);
-            if (!session) {
+      if (!mounted) return;
+      
+      console.log("Auth state changed:", event);
+      
+      switch (event) {
+        case 'SIGNED_OUT':
+          setIsAuthenticated(false);
+          queryClient.clear();
+          toast({
+            title: "Signed Out",
+            description: "You have been signed out successfully.",
+          });
+          break;
+          
+        case 'SIGNED_IN':
+          console.log('User signed in successfully');
+          setIsAuthenticated(true);
+          break;
+          
+        case 'TOKEN_REFRESHED':
+          // Don't update state or show notifications for token refresh
+          console.log('Session token refreshed successfully');
+          break;
+          
+        case 'USER_UPDATED':
+          console.log('User data updated');
+          setIsAuthenticated(!!session);
+          break;
+          
+        default:
+          // Only update authentication state if it actually changed
+          const newAuthState = !!session;
+          if (isAuthenticated !== newAuthState) {
+            setIsAuthenticated(newAuthState);
+            if (!newAuthState) {
               queryClient.clear();
             }
-            break;
-        }
+          }
+          break;
       }
     });
 
@@ -128,7 +133,7 @@ const App = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, [toast, isAuthenticated]); // Add isAuthenticated to dependencies
 
   if (isLoading) {
     return (
