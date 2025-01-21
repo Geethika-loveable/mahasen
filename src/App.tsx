@@ -34,29 +34,35 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const authChangeTimeout = useRef<NodeJS.Timeout | null>(null);
   const lastAuthEvent = useRef<string | null>(null);
-  const authTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isInitialMount = useRef(true);
 
   const handleAuthChange = useCallback((authenticated: boolean, event?: string) => {
-    // Prevent duplicate auth changes within a short time window
+    // Prevent handling the same event type in quick succession
     if (lastAuthEvent.current === event && event !== 'SIGNED_OUT') {
       return;
     }
 
     // Clear any pending auth updates
-    if (authTimeout.current) {
-      clearTimeout(authTimeout.current);
+    if (authChangeTimeout.current) {
+      clearTimeout(authChangeTimeout.current);
     }
 
     lastAuthEvent.current = event || null;
 
-    // Delay auth state update slightly to prevent rapid changes
-    authTimeout.current = setTimeout(() => {
-      setIsAuthenticated(authenticated);
-      
-      if (!authenticated) {
-        queryClient.clear();
-      }
+    // Set a small delay to prevent rapid state updates
+    authChangeTimeout.current = setTimeout(() => {
+      setIsAuthenticated((current) => {
+        // Only update if the authentication state actually changed
+        if (current !== authenticated) {
+          if (!authenticated) {
+            queryClient.clear();
+          }
+          return authenticated;
+        }
+        return current;
+      });
 
       // Only show toast for explicit sign-out
       if (event === 'SIGNED_OUT') {
@@ -70,41 +76,33 @@ const App = () => {
 
   // Initial session check
   useEffect(() => {
-    let mounted = true;
-
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Session check error:", error);
-          if (mounted) {
-            handleAuthChange(false);
-          }
+          handleAuthChange(false);
           return;
         }
 
-        if (mounted) {
-          handleAuthChange(!!session);
-        }
+        handleAuthChange(!!session);
       } catch (error) {
         console.error("Session check error:", error);
-        if (mounted) {
-          handleAuthChange(false);
-        }
+        handleAuthChange(false);
       } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
     };
 
-    checkSession();
+    if (isInitialMount.current) {
+      checkSession();
+      isInitialMount.current = false;
+    }
 
     return () => {
-      mounted = false;
-      if (authTimeout.current) {
-        clearTimeout(authTimeout.current);
+      if (authChangeTimeout.current) {
+        clearTimeout(authChangeTimeout.current);
       }
     };
   }, [handleAuthChange]);
@@ -113,7 +111,7 @@ const App = () => {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
 
       switch (event) {
@@ -122,20 +120,22 @@ const App = () => {
           break;
 
         case 'SIGNED_IN':
-          console.log('User signed in successfully');
           handleAuthChange(true, event);
           break;
 
         case 'TOKEN_REFRESHED':
           // Don't update state for token refresh
-          console.log('Session token refreshed successfully');
+          console.log('Token refreshed successfully');
           break;
 
         case 'USER_UPDATED':
-          handleAuthChange(!!session, event);
+          if (isAuthenticated !== !!session) {
+            handleAuthChange(!!session, event);
+          }
           break;
 
         default:
+          // Only update state if it's different from current
           if (isAuthenticated !== !!session) {
             handleAuthChange(!!session, event);
           }
