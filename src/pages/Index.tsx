@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 
 interface FeatureIcon {
   ({ className }: { className?: string }): JSX.Element;
@@ -66,14 +67,33 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <div
-                  key={index}
-                  className="p-6 rounded-lg bg-background border"
-                >
-                  <feature.icon className="h-12 w-12 text-emerald-600 dark:text-emerald-500" />
-                  <h3 className="mt-4 text-xl font-semibold text-foreground">{feature.title}</h3>
-                  <p className="mt-2 text-muted-foreground">{feature.description}</p>
-                </div>
+                <CardContainer key={index}>
+                  <CardBody className="bg-background relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] border-black/[0.1] w-full h-full rounded-xl p-6 border">
+                    <CardItem translateZ="50" className="w-12 h-12 text-emerald-600 dark:text-emerald-500">
+                      <feature.icon className="w-full h-full" />
+                    </CardItem>
+                    <CardItem
+                      translateZ="60"
+                      className="mt-4 text-xl font-semibold text-foreground"
+                    >
+                      {feature.title}
+                    </CardItem>
+                    <CardItem
+                      as="p"
+                      translateZ="80"
+                      className="mt-2 text-muted-foreground"
+                    >
+                      {feature.description}
+                    </CardItem>
+                    <CardItem translateZ="100" className="w-full mt-4">
+                      <img
+                        src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2560&auto=format&fit=crop"
+                        className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+                        alt="feature"
+                      />
+                    </CardItem>
+                  </CardBody>
+                </CardContainer>
               ))}
             </div>
           </div>
