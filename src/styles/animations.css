@@ -32,7 +32,7 @@
   border-radius: 0.75rem;
   filter: blur(8px);
   opacity: 0.9;
-  transition: all 3s ease;
+  transition: all 0.3s ease;
 }
 
 .animate-gradient-xy {
