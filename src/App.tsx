@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import Index from "./pages/Index";
@@ -34,7 +34,41 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const lastAuthEvent = useRef<string | null>(null);
+  const authTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  const handleAuthChange = useCallback((authenticated: boolean, event?: string) => {
+    // Prevent duplicate auth changes within a short time window
+    if (lastAuthEvent.current === event && event !== 'SIGNED_OUT') {
+      return;
+    }
+
+    // Clear any pending auth updates
+    if (authTimeout.current) {
+      clearTimeout(authTimeout.current);
+    }
+
+    lastAuthEvent.current = event || null;
+
+    // Delay auth state update slightly to prevent rapid changes
+    authTimeout.current = setTimeout(() => {
+      setIsAuthenticated(authenticated);
+      
+      if (!authenticated) {
+        queryClient.clear();
+      }
+
+      // Only show toast for explicit sign-out
+      if (event === 'SIGNED_OUT') {
+        toast({
+          title: "Signed Out",
+          description: "You have been signed out successfully.",
+        });
+      }
+    }, 100);
+  }, [toast]);
+
+  // Initial session check
   useEffect(() => {
     let mounted = true;
 
@@ -45,33 +79,18 @@ const App = () => {
         if (error) {
           console.error("Session check error:", error);
           if (mounted) {
-            setIsAuthenticated(false);
-            queryClient.clear();
-            
-            // Only show error toast for non-refresh token errors
-            if (!error.message.includes("Refresh Token Not Found")) {
-              toast({
-                variant: "destructive",
-                title: "Session Error",
-                description: "Please sign in again to continue.",
-              });
-            }
+            handleAuthChange(false);
           }
           return;
         }
-        
+
         if (mounted) {
-          const hasValidSession = !!session;
-          setIsAuthenticated(hasValidSession);
-          if (!hasValidSession) {
-            queryClient.clear();
-          }
+          handleAuthChange(!!session);
         }
       } catch (error) {
         console.error("Session check error:", error);
         if (mounted) {
-          setIsAuthenticated(false);
-          queryClient.clear();
+          handleAuthChange(false);
         }
       } finally {
         if (mounted) {
@@ -80,60 +99,54 @@ const App = () => {
       }
     };
 
-    // Initial session check
     checkSession();
 
-    // Listen for auth changes
+    return () => {
+      mounted = false;
+      if (authTimeout.current) {
+        clearTimeout(authTimeout.current);
+      }
+    };
+  }, [handleAuthChange]);
+
+  // Auth state change listener
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      
       console.log("Auth state changed:", event);
-      
+
       switch (event) {
         case 'SIGNED_OUT':
-          setIsAuthenticated(false);
-          queryClient.clear();
-          toast({
-            title: "Signed Out",
-            description: "You have been signed out successfully.",
-          });
+          handleAuthChange(false, event);
           break;
-          
+
         case 'SIGNED_IN':
           console.log('User signed in successfully');
-          setIsAuthenticated(true);
+          handleAuthChange(true, event);
           break;
-          
+
         case 'TOKEN_REFRESHED':
-          // Don't update state or show notifications for token refresh
+          // Don't update state for token refresh
           console.log('Session token refreshed successfully');
           break;
-          
+
         case 'USER_UPDATED':
-          console.log('User data updated');
-          setIsAuthenticated(!!session);
+          handleAuthChange(!!session, event);
           break;
-          
+
         default:
-          // Only update authentication state if it actually changed
-          const newAuthState = !!session;
-          if (isAuthenticated !== newAuthState) {
-            setIsAuthenticated(newAuthState);
-            if (!newAuthState) {
-              queryClient.clear();
-            }
+          if (isAuthenticated !== !!session) {
+            handleAuthChange(!!session, event);
           }
           break;
       }
     });
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
-  }, [toast, isAuthenticated]); // Add isAuthenticated to dependencies
+  }, [handleAuthChange, isAuthenticated]);
 
   if (isLoading) {
     return (
