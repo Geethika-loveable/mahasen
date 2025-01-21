@@ -87,7 +87,7 @@ const Index = () => {
                     </CardItem>
                     <CardItem translateZ="100" className="w-full mt-4">
                       <img
-                        src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2560&auto=format&fit=crop"
+                        src="https://ik.imagekit.io/ably/ghost/prod/2023/01/build-a-realtime-chat-app-from-scratch--1-.png?tr=w-1728,q-50"
                         className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
                         alt="feature"
                       />
@@ -104,7 +104,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-muted-foreground">
-              All Rights Reserved - Aventis Global
+              All Rights Reserved -  Azynctra 2025
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" onClick={() => navigate("/about")}>
