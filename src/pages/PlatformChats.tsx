@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useEffect } from "react";
-import { useToast } from "@/components/ui/use-toast";
 
 type Platform = Database["public"]["Enums"]["platform_type"];
 const validPlatforms: Platform[] = ["whatsapp", "facebook", "instagram"];
@@ -25,31 +24,11 @@ const PlatformChats = () => {
   const { platform } = useParams<{ platform: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   // Validate if the platform is valid
   const isValidPlatform = (p: string | undefined): p is Platform => {
     return !!p && validPlatforms.includes(p as Platform);
   };
-
-  // Check authentication status
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        console.error("Auth error:", error);
-        toast({
-          variant: "destructive",
-          title: "Authentication Error",
-          description: "Please sign in again to continue.",
-        });
-        navigate("/login");
-        return;
-      }
-    };
-    
-    checkAuth();
-  }, [navigate, toast]);
 
   // Set up real-time subscription for message updates
   useEffect(() => {
@@ -60,13 +39,13 @@ const PlatformChats = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'messages',
           filter: platform ? `platform=eq.${platform}` : undefined
         },
-        (payload) => {
-          console.log("Received real-time update:", payload);
+        () => {
+          // Immediately invalidate and refetch conversations
           queryClient.invalidateQueries({ 
             queryKey: ["conversations", platform],
             exact: true
@@ -75,9 +54,6 @@ const PlatformChats = () => {
       )
       .subscribe((status) => {
         console.log("Subscription status:", status);
-        if (status === 'SUBSCRIBED') {
-          console.log(`Successfully subscribed to ${platform} messages`);
-        }
       });
 
     return () => {
@@ -86,67 +62,48 @@ const PlatformChats = () => {
     };
   }, [platform, queryClient]);
 
-  const { data: conversations, isLoading, error } = useQuery({
+  const { data: conversations, isLoading } = useQuery({
     queryKey: ["conversations", platform],
     queryFn: async () => {
       if (!isValidPlatform(platform)) {
         throw new Error("Invalid platform specified");
       }
 
-      try {
-        // Get conversations with their latest message timestamp
-        const { data: conversationsData, error: conversationsError } = await supabase
-          .from("conversations")
-          .select(`
-            *,
-            messages:messages (
-              created_at,
-              read
-            )
-          `)
-          .eq("platform", platform);
+      // Get conversations with their latest message timestamp
+      const { data: conversationsData, error: conversationsError } = await supabase
+        .from("conversations")
+        .select(`
+          *,
+          messages:messages (
+            created_at,
+            read
+          )
+        `)
+        .eq("platform", platform);
 
-        if (conversationsError) {
-          console.error("Error fetching conversations:", conversationsError);
-          throw conversationsError;
-        }
+      if (conversationsError) throw conversationsError;
 
-        if (!conversationsData) {
-          console.log("No conversations found");
-          return [];
-        }
+      // Process the conversations to include latest message time and unread status
+      const processedConversations = conversationsData.map(conversation => {
+        const messages = conversation.messages || [];
+        const latestMessage = messages.reduce((latest: any, current: any) => {
+          return !latest || new Date(current.created_at) > new Date(latest.created_at)
+            ? current
+            : latest;
+        }, null);
 
-        // Process the conversations to include latest message time and unread status
-        const processedConversations = conversationsData.map(conversation => {
-          const messages = conversation.messages || [];
-          const latestMessage = messages.reduce((latest: any, current: any) => {
-            return !latest || new Date(current.created_at) > new Date(latest.created_at)
-              ? current
-              : latest;
-          }, null);
+        return {
+          ...conversation,
+          has_unread: messages.some((msg: any) => !msg.read && msg.status === 'received'),
+          latest_message_time: latestMessage ? latestMessage.created_at : conversation.created_at
+        };
+      });
 
-          return {
-            ...conversation,
-            has_unread: messages.some((msg: any) => !msg.read && msg.status === 'received'),
-            latest_message_time: latestMessage ? latestMessage.created_at : conversation.created_at
-          };
-        });
-
-        // Sort by latest message time
-        return processedConversations.sort((a, b) => 
-          new Date(b.latest_message_time).getTime() - new Date(a.latest_message_time).getTime()
-        );
-      } catch (error) {
-        console.error("Error in conversation query:", error);
-        toast({
-          variant: "destructive",
-          title: "Error Loading Conversations",
-          description: "Please try refreshing the page.",
-        });
-        throw error;
-      }
+      // Sort by latest message time
+      return processedConversations.sort((a, b) => 
+        new Date(b.latest_message_time).getTime() - new Date(a.latest_message_time).getTime()
+      );
     },
-    retry: 1,
     refetchOnWindowFocus: true,
   });
 
@@ -162,11 +119,6 @@ const PlatformChats = () => {
 
       if (error) {
         console.error("Error marking messages as read:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to update message status.",
-        });
       }
 
       // Immediately invalidate the conversations query to update UI
@@ -179,11 +131,6 @@ const PlatformChats = () => {
       navigate(`/chat/${conversationId}`);
     } catch (error) {
       console.error("Error in handleChatClick:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to open chat. Please try again.",
-      });
     }
   };
 
@@ -203,27 +150,6 @@ const PlatformChats = () => {
             <h1 className="text-2xl font-bold text-red-600">Invalid Platform</h1>
           </div>
           <p>The specified platform is not valid. Please select a valid platform from the dashboard.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center mb-6">
-            <Button
-              variant="ghost"
-              className="mr-4"
-              onClick={() => navigate("/dashboard")}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <h1 className="text-2xl font-bold text-red-600">Error Loading Conversations</h1>
-          </div>
-          <p>Failed to load conversations. Please try refreshing the page.</p>
         </div>
       </div>
     );
