@@ -25,7 +25,7 @@ const queryClient = new QueryClient({
       retry: 1,
       networkMode: "always",
       staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (previously cacheTime)
     },
   },
 });
@@ -38,6 +38,7 @@ const App = () => {
   useEffect(() => {
     let mounted = true;
 
+    // Check initial session
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -47,13 +48,12 @@ const App = () => {
           if (mounted) {
             setIsAuthenticated(false);
             queryClient.clear();
-            
             // Only show error toast for non-refresh token errors
-            if (!error.message.includes("Refresh Token Not Found")) {
+            if (error.message !== "Invalid Refresh Token: Refresh Token Not Found") {
               toast({
                 variant: "destructive",
-                title: "Session Error",
-                description: "Please sign in again to continue.",
+                title: "Authentication Error",
+                description: "Please try logging in again.",
               });
             }
           }
@@ -79,7 +79,6 @@ const App = () => {
       }
     };
 
-    // Initial session check
     checkSession();
 
     // Listen for auth changes
@@ -94,46 +93,42 @@ const App = () => {
             setIsAuthenticated(false);
             queryClient.clear();
             toast({
-              title: "Signed Out",
-              description: "You have been signed out successfully.",
+              variant: "destructive",
+              title: "Session Ended",
+              description: "Please log in again to continue.",
             });
             break;
-            
           case 'TOKEN_REFRESHED':
             console.log('Session token refreshed successfully');
             setIsAuthenticated(true);
             break;
-            
           case 'SIGNED_IN':
             console.log('User signed in successfully');
             setIsAuthenticated(true);
             break;
-            
           case 'USER_UPDATED':
             console.log('User data updated');
             setIsAuthenticated(!!session);
             break;
-            
           default:
             setIsAuthenticated(!!session);
-            if (!session) {
-              queryClient.clear();
-            }
             break;
         }
       }
     });
 
+    // Cleanup function
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
   }, [toast]);
 
+  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
   }
