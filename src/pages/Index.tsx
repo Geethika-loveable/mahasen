@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
+import { Cover } from "@/components/ui/cover";
 
 interface FeatureIcon {
   ({ className }: { className?: string }): JSX.Element;
@@ -41,7 +42,7 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-8">
             <div className="text-center space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-              Intelligent Customer Support
+                <Cover>Intelligent</Cover> Customer Support
                 <br />
                 <span className="text-emerald-600 dark:text-emerald-500">Powered by AI</span>
               </h1>
