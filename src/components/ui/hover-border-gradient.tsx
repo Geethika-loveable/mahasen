@@ -34,17 +34,16 @@ export function HoverBorderGradient({
     return directions[nextIndex];
   };
  
+  // Enhanced glow with more spread and opacity for light mode visibility
   const movingMap: Record<Direction, string> = {
-    TOP: "radial-gradient(20.7% 50% at 50% 0%, hsl(0, 0%, 100%) 0%, rgba(255, 255, 255, 0) 100%)",
-    LEFT: "radial-gradient(16.6% 43.1% at 0% 50%, hsl(0, 0%, 100%) 0%, rgba(255, 255, 255, 0) 100%)",
-    BOTTOM:
-      "radial-gradient(20.7% 50% at 50% 100%, hsl(0, 0%, 100%) 0%, rgba(255, 255, 255, 0) 100%)",
-    RIGHT:
-      "radial-gradient(16.2% 41.199999999999996% at 100% 50%, hsl(0, 0%, 100%) 0%, rgba(255, 255, 255, 0) 100%)",
+    TOP: "radial-gradient(30% 70% at 50% 0%, hsl(252, 87%, 67%) 0%, rgba(139, 92, 246, 0) 100%)",
+    LEFT: "radial-gradient(25% 60% at 0% 50%, hsl(252, 87%, 67%) 0%, rgba(139, 92, 246, 0) 100%)",
+    BOTTOM: "radial-gradient(30% 70% at 50% 100%, hsl(252, 87%, 67%) 0%, rgba(139, 92, 246, 0) 100%)",
+    RIGHT: "radial-gradient(25% 60% at 100% 50%, hsl(252, 87%, 67%) 0%, rgba(139, 92, 246, 0) 100%)",
   };
  
   const highlight =
-    "radial-gradient(500% 181.15942028985506% at 50% 50%, #3275F8 0%, rgba(255, 255, 255, 0) 100%)";
+    "radial-gradient(100% 200% at 50% 50%, #8B5CF6 0%, rgba(139, 92, 246, 0.2) 50%, rgba(139, 92, 246, 0) 100%)";
  
   useEffect(() => {
     if (!hovered) {
@@ -53,7 +52,7 @@ export function HoverBorderGradient({
       }, duration * 1000);
       return () => clearInterval(interval);
     }
-  }, [hovered]);
+  }, [hovered, duration]);
 
   return (
     <Tag
@@ -71,10 +70,11 @@ export function HoverBorderGradient({
       <motion.div
         className="flex-none inset-0 overflow-hidden absolute z-0 rounded-[inherit]"
         style={{
-          filter: "blur(2px)",
+          filter: "blur(8px)", // Increased blur for better glow effect
           position: "absolute",
           width: "100%",
           height: "100%",
+          opacity: "0.8", // Added opacity for better visibility
         }}
         initial={{ background: movingMap[direction] }}
         animate={{
