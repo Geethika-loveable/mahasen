@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 import { Cover } from "@/components/ui/cover";
+import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 
 interface FeatureIcon {
   ({ className }: { className?: string }): JSX.Element;
@@ -28,10 +29,20 @@ const Index = () => {
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Button variant="ghost" onClick={() => navigate("/login")}>
+              <HoverBorderGradient
+                onClick={() => navigate("/login")}
+                className="px-4 py-2 text-sm font-medium"
+                containerClassName="rounded-md"
+              >
                 Sign in
-              </Button>
-              <Button onClick={() => navigate("/signup")}>Get Started</Button>
+              </HoverBorderGradient>
+              <HoverBorderGradient
+                onClick={() => navigate("/signup")}
+                className="px-4 py-2 text-sm font-medium"
+                containerClassName="rounded-md"
+              >
+                Get Started
+              </HoverBorderGradient>
             </div>
           </div>
         </div>
@@ -53,13 +64,21 @@ const Index = () => {
             </div>
 
             <div className="flex justify-center gap-4">
-              <Button size="lg" onClick={() => navigate("/signup")}>
+              <HoverBorderGradient
+                onClick={() => navigate("/signup")}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                containerClassName="rounded-md"
+              >
                 Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/login")}>
+              </HoverBorderGradient>
+              <HoverBorderGradient
+                onClick={() => navigate("/login")}
+                className="px-4 py-2 text-sm font-medium"
+                containerClassName="rounded-md"
+              >
                 Sign in
-              </Button>
+              </HoverBorderGradient>
             </div>
           </div>
         </section>
