@@ -30,7 +30,9 @@ export const SparklesCore = (props: ParticlesProps) => {
     particleColor,
     particleDensity,
   } = props;
+  
   const [init, setInit] = useState(false);
+  
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
@@ -38,6 +40,7 @@ export const SparklesCore = (props: ParticlesProps) => {
       setInit(true);
     });
   }, []);
+  
   const controls = useAnimation();
 
   const particlesLoaded = async (container?: Container) => {
@@ -52,6 +55,7 @@ export const SparklesCore = (props: ParticlesProps) => {
   };
 
   const generatedId = useId();
+
   return (
     <motion.div animate={controls} className={cn("opacity-0", className)}>
       {init && (
@@ -62,25 +66,14 @@ export const SparklesCore = (props: ParticlesProps) => {
           options={{
             background: {
               color: {
-                value: background || "#0d47a1",
+                value: background || "transparent",
               },
             },
             fullScreen: {
               enable: false,
               zIndex: 1,
             },
-            fpsLimit: 120,
             particles: {
-              color: {
-                value: particleColor || "#ffffff",
-              },
-              move: {
-                enable: true,
-                speed: {
-                  min: 0.1,
-                  max: 1,
-                },
-              },
               number: {
                 density: {
                   enable: true,
@@ -88,6 +81,25 @@ export const SparklesCore = (props: ParticlesProps) => {
                   height: 400,
                 },
                 value: particleDensity || 120,
+              },
+              color: {
+                value: particleColor || "#ffffff",
+              },
+              size: {
+                value: {
+                  min: minSize || 1,
+                  max: maxSize || 3,
+                },
+              },
+              move: {
+                enable: true,
+                speed: speed || 2,
+                direction: "none",
+                random: true,
+                straight: false,
+                outModes: {
+                  default: "out",
+                },
               },
               opacity: {
                 value: {
@@ -99,15 +111,6 @@ export const SparklesCore = (props: ParticlesProps) => {
                   speed: speed || 4,
                   sync: false,
                 },
-              },
-              size: {
-                value: {
-                  min: minSize || 1,
-                  max: maxSize || 3,
-                },
-              },
-              shape: {
-                type: "circle",
               },
             },
             detectRetina: true,
