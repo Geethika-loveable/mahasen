@@ -42,9 +42,9 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-8">
             <div className="text-center space-y-4">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-                <Cover>Intelligent</Cover> Customer Support
+                Intelligent Customer Support
                 <br />
-                <span className="text-emerald-600 dark:text-emerald-500">Powered by AI</span>
+                <Cover>Powered by AI</Cover>
               </h1>
               <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
                 Manage all your customer conversations from WhatsApp, Facebook, and Instagram in one place.
