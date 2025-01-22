@@ -29,20 +29,19 @@ const Index = () => {
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <HoverBorderGradient
+              <Button 
+                variant="outline" 
                 onClick={() => navigate("/login")}
-                className="px-4 py-2 text-sm font-medium"
-                containerClassName="rounded-md"
+                className="text-foreground"
               >
                 Sign in
-              </HoverBorderGradient>
-              <HoverBorderGradient
+              </Button>
+              <Button 
                 onClick={() => navigate("/signup")}
-                className="px-4 py-2 text-sm font-medium"
-                containerClassName="rounded-md"
+                className="text-primary-foreground"
               >
                 Get Started
-              </HoverBorderGradient>
+              </Button>
             </div>
           </div>
         </div>
@@ -66,7 +65,7 @@ const Index = () => {
             <div className="flex justify-center gap-4">
               <HoverBorderGradient
                 onClick={() => navigate("/signup")}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white"
                 containerClassName="rounded-md"
               >
                 Get Started
@@ -74,7 +73,7 @@ const Index = () => {
               </HoverBorderGradient>
               <HoverBorderGradient
                 onClick={() => navigate("/login")}
-                className="px-4 py-2 text-sm font-medium"
+                className="px-4 py-2 text-sm font-medium text-white"
                 containerClassName="rounded-md"
               >
                 Sign in
