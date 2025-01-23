@@ -6,7 +6,10 @@ const tabs = [
     value: "platform",
     content: (
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-blue-600 to-blue-800">
-        <p>Connect All Your Platforms</p>
+        <div className="text-center space-y-2">
+          <p>Connect All Your Platforms</p>
+          <p className="text-base font-normal opacity-80">Manage WhatsApp, Facebook & Instagram messages in one place</p>
+        </div>
         <img
           src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
           alt="Multi Platform Integration"
@@ -20,7 +23,10 @@ const tabs = [
     value: "customer",
     content: (
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-blue-400 to-blue-600">
-        <p>Focus on Customer Experience</p>
+        <div className="text-center space-y-2">
+          <p>Focus on Customer Experience</p>
+          <p className="text-base font-normal opacity-80">Deliver exceptional service with personalized interactions</p>
+        </div>
         <img
           src="https://images.unsplash.com/photo-1519389950473-47ba0277781c"
           alt="Customer Experience"
@@ -34,7 +40,10 @@ const tabs = [
     value: "ai",
     content: (
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-sky-500 to-sky-700">
-        <p>Human-AI Collaboration</p>
+        <div className="text-center space-y-2">
+          <p>Human-AI Collaboration</p>
+          <p className="text-base font-normal opacity-80">Blend human expertise with AI assistance for optimal results</p>
+        </div>
         <img
           src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d"
           alt="AI Integration"
@@ -48,7 +57,10 @@ const tabs = [
     value: "architecture",
     content: (
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-cyan-500 to-cyan-700">
-        <p>Intelligent Agent System</p>
+        <div className="text-center space-y-2">
+          <p>Intelligent Agent System</p>
+          <p className="text-base font-normal opacity-80">Smart routing and handling of customer inquiries</p>
+        </div>
         <img
           src="https://images.unsplash.com/photo-1531297484001-80022131f5a1"
           alt="Agent Architecture"
@@ -62,7 +74,10 @@ const tabs = [
     value: "tickets",
     content: (
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-teal-300 to-teal-500">
-        <p>Streamlined Support</p>
+        <div className="text-center space-y-2">
+          <p>Streamlined Support</p>
+          <p className="text-base font-normal opacity-80">Efficiently manage and resolve customer support tickets</p>
+        </div>
         <img
           src="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
           alt="Support System"
