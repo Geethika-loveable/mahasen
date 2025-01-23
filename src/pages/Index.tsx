@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
 import { Cover } from "@/components/ui/cover";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
+import { TabsDemo } from "@/components/TabsDemo";
 
 interface FeatureIcon {
   ({ className }: { className?: string }): JSX.Element;
@@ -117,7 +118,20 @@ const Index = () => {
             </div>
           </div>
         </section>
-      </main>
+
+        <section className="py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                Explore Our Features
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                Discover how our platform can transform your customer support experience
+              </p>
+            </div>
+            <TabsDemo />
+          </div>
+        </section>
 
       <footer className="border-t bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -152,6 +166,7 @@ const Index = () => {
           </div>
         </div>
       </footer>
+      </main>
     </div>
   );
 };
