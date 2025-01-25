@@ -8,7 +8,6 @@ const tabs = [
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-blue-600 to-blue-800">
         <div className="text-center space-y-2">
           <p>Connect All Your Platforms</p>
-          <p className="text-base font-normal text-white/90">Manage WhatsApp, Facebook & Instagram messages in one place</p>
         </div>
         <img
           src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
@@ -25,7 +24,6 @@ const tabs = [
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-blue-400 to-blue-600">
         <div className="text-center space-y-2">
           <p>Focus on Customer Experience</p>
-          <p className="text-base font-normal text-white/90">Deliver exceptional service with personalized interactions</p>
         </div>
         <img
           src="https://images.unsplash.com/photo-1519389950473-47ba0277781c"
@@ -42,7 +40,7 @@ const tabs = [
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-sky-500 to-sky-700">
         <div className="text-center space-y-2">
           <p>Human-AI Collaboration</p>
-          <p className="text-base font-normal text-white/90">Blend human expertise with AI assistance for optimal results</p>
+          
         </div>
         <img
           src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d"
@@ -59,7 +57,7 @@ const tabs = [
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-cyan-500 to-cyan-700">
         <div className="text-center space-y-2">
           <p>Intelligent Agent System</p>
-          <p className="text-base font-normal text-white/90">Smart routing and handling of customer inquiries</p>
+          
         </div>
         <img
           src="https://images.unsplash.com/photo-1531297484001-80022131f5a1"
@@ -76,7 +74,7 @@ const tabs = [
       <div className="w-full overflow-hidden relative h-full rounded-2xl p-10 text-xl md:text-4xl font-bold text-white bg-gradient-to-br from-teal-300 to-teal-500">
         <div className="text-center space-y-2">
           <p>Streamlined Support</p>
-          <p className="text-base font-normal text-white/90">Efficiently manage and resolve customer support tickets</p>
+          
         </div>
         <img
           src="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7"
