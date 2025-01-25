@@ -26,7 +26,11 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <span className="text-xl font-semibold">Mahasen AI</span>
+              <img 
+                src="/lovable-uploads/6bdab8c7-96e8-4d13-84c2-8bf7b589255f.png" 
+                alt="Mahasen AI" 
+                className="h-8"
+              />
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
