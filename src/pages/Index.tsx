@@ -109,19 +109,21 @@ const Index = () => {
                     >
                       {feature.description}
                     </CardItem>
+
                     <CardItem translateZ="100" className="w-full mt-4">
                       <img
-                        src={`/src/uploads/${
+                        src={`/lovable-uploads/${
                           index === 0
-                            ? 'Multi-Platform Integration.jpg'
+                            ? '9a90c27c-bc08-4001-b428-79096a891fb7.png'
                             : index === 1
-                            ? 'Real-time conversations.jpg'
-                            : 'Smart inbox.jpg'
+                            ? 'ee4bc15e-d535-4cc2-a6ce-b8f9fe8c5668.png'
+                            : '975b4ec3-83cb-40c0-9077-1e9b821e31ff.png'
                         }`}
                         className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
                         alt={feature.title}
                       />
                     </CardItem>
+
                   </CardBody>
                 </CardContainer>
               ))}
@@ -245,3 +247,4 @@ const features: Feature[] = [
 ];
 
 export default Index;
+
