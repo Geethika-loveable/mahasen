@@ -111,9 +111,15 @@ const Index = () => {
                     </CardItem>
                     <CardItem translateZ="100" className="w-full mt-4">
                       <img
-                        src="https://ik.imagekit.io/ably/ghost/prod/2023/01/build-a-realtime-chat-app-from-scratch--1-.png?tr=w-1728,q-50"
+                        src={`/lovable-uploads/${
+                          index === 0
+                            ? 'fa92ff68-6784-481a-9399-7e03144793bb.png'
+                            : index === 1
+                            ? 'ac5da529-d361-4a5e-8036-039c1d956fba.png'
+                            : '5c0383c0-ab0b-4bc8-b716-aff08e99972e.png'
+                        }`}
                         className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
-                        alt="feature"
+                        alt={feature.title}
                       />
                     </CardItem>
                   </CardBody>
