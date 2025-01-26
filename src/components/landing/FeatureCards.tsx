@@ -43,7 +43,7 @@ export const FeatureCards = ({ features }: FeatureCardsProps) => {
                   <img
                     src={`/lovable-uploads/${
                       index === 0
-                        ? '9a90c27c-bc08-4001-b428-79096a891fb7.png'
+                        ? '93e9c380-e7e0-4a20-8558-5c3a174599ee.png'
                         : index === 1
                         ? 'ee4bc15e-d535-4cc2-a6ce-b8f9fe8c5668.png'
                         : '975b4ec3-83cb-40c0-9077-1e9b821e31ff.png'
