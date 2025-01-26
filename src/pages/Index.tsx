@@ -113,7 +113,7 @@ const Index = () => {
                       <img
                         src={`/lovable-uploads/${
                           index === 0
-                            ? 'fa92ff68-6784-481a-9399-7e03144793bb.png'
+                            ? '7311c686-2acb-474a-b040-23a8582a3b2f.png'
                             : index === 1
                             ? 'ac5da529-d361-4a5e-8036-039c1d956fba.png'
                             : '5c0383c0-ab0b-4bc8-b716-aff08e99972e.png'
