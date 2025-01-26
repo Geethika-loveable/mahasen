@@ -1,189 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { CardContainer, CardBody, CardItem } from "@/components/ui/3d-card";
-import { Cover } from "@/components/ui/cover";
-import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
-import { TabsDemo } from "@/components/TabsDemo";
+import { Navigation } from "@/components/landing/Navigation";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { FeatureCards } from "@/components/landing/FeatureCards";
+import { ExploreFeatures } from "@/components/landing/ExploreFeatures";
+import { Footer } from "@/components/landing/Footer";
 
-interface FeatureIcon {
-  ({ className }: { className?: string }): JSX.Element;
-}
-
-interface Feature {
-  title: string;
-  description: string;
-  icon: FeatureIcon;
-}
-
-const Index = () => {
-  const navigate = useNavigate();
-
-  return (
-    <div className="min-h-screen bg-background">
-      <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-sm border-b z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <img 
-                src="/lovable-uploads/6bdab8c7-96e8-4d13-84c2-8bf7b589255f.png" 
-                alt="Mahasen AI" 
-                className="h-8"
-              />
-            </div>
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/login")}
-                className="text-foreground"
-              >
-                Sign in
-              </Button>
-              <Button 
-                onClick={() => navigate("/signup")}
-                className="text-primary-foreground"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="pt-16">
-        <section className="relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-8">
-            <div className="text-center space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-                Intelligent Customer Support
-                <br />
-                <Cover>Powered by AI</Cover>
-              </h1>
-              <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto">
-                Manage all your customer conversations from WhatsApp, Facebook, and Instagram in one place.
-                Respond faster, collaborate better.
-              </p>
-            </div>
-
-            <div className="flex justify-center gap-4">
-              <HoverBorderGradient
-                onClick={() => navigate("/signup")}
-                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white"
-                containerClassName="rounded-md"
-              >
-                Get Started
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </HoverBorderGradient>
-              <HoverBorderGradient
-                onClick={() => navigate("/login")}
-                className="px-4 py-2 text-sm font-medium text-white"
-                containerClassName="rounded-md"
-              >
-                Sign in
-              </HoverBorderGradient>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-24 bg-muted/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <CardContainer key={index}>
-                  <CardBody className="bg-background relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] border-black/[0.1] w-full h-full rounded-xl p-6 border">
-                    <CardItem translateZ="50" className="w-12 h-12 text-emerald-600 dark:text-emerald-500">
-                      <feature.icon className="w-full h-full" />
-                    </CardItem>
-                    <CardItem
-                      translateZ="60"
-                      className="mt-4 text-xl font-semibold text-foreground"
-                    >
-                      {feature.title}
-                    </CardItem>
-                    <CardItem
-                      as="p"
-                      translateZ="80"
-                      className="mt-2 text-muted-foreground"
-                    >
-                      {feature.description}
-                    </CardItem>
-
-                    <CardItem translateZ="100" className="w-full mt-4">
-                      <img
-                        src={`/lovable-uploads/${
-                          index === 0
-                            ? '9a90c27c-bc08-4001-b428-79096a891fb7.png'
-                            : index === 1
-                            ? 'ee4bc15e-d535-4cc2-a6ce-b8f9fe8c5668.png'
-                            : '975b4ec3-83cb-40c0-9077-1e9b821e31ff.png'
-                        }`}
-                        className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
-                        alt={feature.title}
-                      />
-                    </CardItem>
-
-                  </CardBody>
-                </CardContainer>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Explore Our Features
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground">
-                Discover how our platform can transform your customer support experience
-              </p>
-            </div>
-            <TabsDemo />
-          </div>
-        </section>
-
-      <footer className="border-t bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="text-sm text-muted-foreground">
-              All Rights Reserved -  Azynctra 2025
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" onClick={() => navigate("/about")}>
-                About Us
-              </Button>
-              <div className="text-sm space-x-4 text-muted-foreground">
-                <a 
-                  href="https://geethikaisuru.notion.site/Aventis-Privacy-Policy-140671df8cf1809fb347e99502582345" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Privacy Policy
-                </a>
-                <span>•</span>
-                <a 
-                  href="https://geethikaisuru.notion.site/Aventis-Terms-Of-Service-140671df8cf18036a04dc535bf2db052" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Terms & Conditions
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
-      </main>
-    </div>
-  );
-};
-
-const features: Feature[] = [
+const features = [
   {
     title: "Multi-Platform Integration",
     description: "Connect and manage WhatsApp, Facebook, and Instagram messages seamlessly.",
@@ -246,5 +67,18 @@ const features: Feature[] = [
   },
 ];
 
-export default Index;
+const Index = () => {
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <main className="pt-16">
+        <HeroSection />
+        <FeatureCards features={features} />
+        <ExploreFeatures />
+        <Footer />
+      </main>
+    </div>
+  );
+};
 
+export default Index;
