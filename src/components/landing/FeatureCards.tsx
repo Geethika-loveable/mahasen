@@ -41,15 +41,21 @@ export const FeatureCards = ({ features }: FeatureCardsProps) => {
 
                 <CardItem translateZ="100" className="w-full mt-4">
                   <img
-                    src={`/lovable-uploads/${
+                    src={
                       index === 0
-                        ? '93e9c380-e7e0-4a20-8558-5c3a174599ee.png'
+                        ? "https://i.ibb.co/KK0Nm6x/Multi-Platform-Integration.jpg"
                         : index === 1
-                        ? 'ee4bc15e-d535-4cc2-a6ce-b8f9fe8c5668.png'
-                        : '975b4ec3-83cb-40c0-9077-1e9b821e31ff.png'
-                    }`}
+                        ? "https://i.ibb.co/RTz1zc9/Real-time-conversations.jpg"
+                        : "https://i.ibb.co/njkfj4m/Smart-inbox.jpg"
+                    }
+                    alt={
+                      index === 0
+                        ? "Multi-Platform-Integration"
+                        : index === 1
+                        ? "Real-time-conversations"
+                        : "Smart-inbox"
+                    }
                     className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
-                    alt={feature.title}
                   />
                 </CardItem>
               </CardBody>
