@@ -111,12 +111,12 @@ const Index = () => {
                     </CardItem>
                     <CardItem translateZ="100" className="w-full mt-4">
                       <img
-                        src={`/lovable-uploads/${
+                        src={`/src/uploads/${
                           index === 0
-                            ? '7311c686-2acb-474a-b040-23a8582a3b2f.png'
+                            ? 'Multi-Platform Integration.jpg'
                             : index === 1
-                            ? 'ac5da529-d361-4a5e-8036-039c1d956fba.png'
-                            : '5c0383c0-ab0b-4bc8-b716-aff08e99972e.png'
+                            ? 'Real-time conversations.jpg'
+                            : 'Smart inbox.jpg'
                         }`}
                         className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
                         alt={feature.title}
