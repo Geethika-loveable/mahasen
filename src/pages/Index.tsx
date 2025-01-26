@@ -111,7 +111,7 @@ const Index = () => {
                     </CardItem>
                     <CardItem translateZ="100" className="w-full mt-4">
                       <img
-                        src={`/src/uploads/${
+                        src={`/lovable-uploads/${
                           index === 0
                             ? 'Multi-Platform Integration.jpg'
                             : index === 1
