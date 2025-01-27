@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Plus, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, ChevronDown, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 interface Task {
   id: string;
@@ -18,6 +20,7 @@ interface Task {
 export const TaskSection = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAddTask = () => {
     const newTask = {
@@ -26,6 +29,14 @@ export const TaskSection = () => {
       description: "This is a sample task description. Click to edit.",
     };
     setTasks([...tasks, newTask]);
+  };
+
+  const handleSave = (updatedTask: Task) => {
+    setTasks(tasks.map(task => 
+      task.id === updatedTask.id ? updatedTask : task
+    ));
+    setSelectedTask(null);
+    setIsEditing(false);
   };
 
   return (
@@ -45,12 +56,18 @@ export const TaskSection = () => {
           <Card 
             key={task.id} 
             className="p-4 cursor-pointer hover:shadow-lg transition-all h-48"
-            onClick={() => setSelectedTask(task)}
+            onClick={() => {
+              setSelectedTask(task);
+              setIsEditing(true);
+            }}
           >
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">{task.name}</h3>
-                <ChevronDown className="h-5 w-5" />
+                <div className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
+                  <ChevronDown className="h-5 w-5" />
+                </div>
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 {task.description}
@@ -60,13 +77,57 @@ export const TaskSection = () => {
         ))}
       </div>
 
-      <Dialog open={!!selectedTask} onOpenChange={() => setSelectedTask(null)}>
+      <Dialog 
+        open={isEditing && !!selectedTask} 
+        onOpenChange={() => {
+          setIsEditing(false);
+          setSelectedTask(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedTask?.name}</DialogTitle>
+            <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p>{selectedTask?.description}</p>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Textarea
+                id="name"
+                defaultValue={selectedTask?.name}
+                rows={1}
+                className="resize-none"
+                onChange={(e) => {
+                  if (selectedTask) {
+                    setSelectedTask({
+                      ...selectedTask,
+                      name: e.target.value
+                    });
+                  }
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                defaultValue={selectedTask?.description}
+                rows={4}
+                onChange={(e) => {
+                  if (selectedTask) {
+                    setSelectedTask({
+                      ...selectedTask,
+                      description: e.target.value
+                    });
+                  }
+                }}
+              />
+            </div>
+            <Button 
+              onClick={() => selectedTask && handleSave(selectedTask)}
+              className="w-full bg-[#ea384c] hover:bg-[#ea384c]/90"
+            >
+              Update Task
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

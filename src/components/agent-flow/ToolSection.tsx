@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Plus, ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, ChevronDown, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
 interface Tool {
   id: string;
@@ -18,6 +20,7 @@ interface Tool {
 export const ToolSection = () => {
   const [tools, setTools] = useState<Tool[]>([]);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAddTool = () => {
     const newTool = {
@@ -26,6 +29,14 @@ export const ToolSection = () => {
       description: "This is a sample tool description. Click to edit.",
     };
     setTools([...tools, newTool]);
+  };
+
+  const handleSave = (updatedTool: Tool) => {
+    setTools(tools.map(tool => 
+      tool.id === updatedTool.id ? updatedTool : tool
+    ));
+    setSelectedTool(null);
+    setIsEditing(false);
   };
 
   return (
@@ -45,12 +56,18 @@ export const ToolSection = () => {
           <Card 
             key={tool.id} 
             className="p-4 cursor-pointer hover:shadow-lg transition-all h-48"
-            onClick={() => setSelectedTool(tool)}
+            onClick={() => {
+              setSelectedTool(tool);
+              setIsEditing(true);
+            }}
           >
             <div className="h-full flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">{tool.name}</h3>
-                <ChevronDown className="h-5 w-5" />
+                <div className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
+                  <ChevronDown className="h-5 w-5" />
+                </div>
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 {tool.description}
@@ -60,13 +77,57 @@ export const ToolSection = () => {
         ))}
       </div>
 
-      <Dialog open={!!selectedTool} onOpenChange={() => setSelectedTool(null)}>
+      <Dialog 
+        open={isEditing && !!selectedTool} 
+        onOpenChange={() => {
+          setIsEditing(false);
+          setSelectedTool(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{selectedTool?.name}</DialogTitle>
+            <DialogTitle>Edit Tool</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p>{selectedTool?.description}</p>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Textarea
+                id="name"
+                defaultValue={selectedTool?.name}
+                rows={1}
+                className="resize-none"
+                onChange={(e) => {
+                  if (selectedTool) {
+                    setSelectedTool({
+                      ...selectedTool,
+                      name: e.target.value
+                    });
+                  }
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                defaultValue={selectedTool?.description}
+                rows={4}
+                onChange={(e) => {
+                  if (selectedTool) {
+                    setSelectedTool({
+                      ...selectedTool,
+                      description: e.target.value
+                    });
+                  }
+                }}
+              />
+            </div>
+            <Button 
+              onClick={() => selectedTool && handleSave(selectedTool)}
+              className="w-full bg-[#ea384c] hover:bg-[#ea384c]/90"
+            >
+              Update Tool
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
