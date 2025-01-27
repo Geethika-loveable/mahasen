@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Plus, ChevronDown, Pencil } from "lucide-react";
+import { Plus, ChevronDown, Pencil, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,10 @@ export const TaskSection = () => {
     setIsEditing(false);
   };
 
+  const handleRemove = (taskId: string) => {
+    setTasks(tasks.filter(task => task.id !== taskId));
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Tasks</h2>
@@ -55,13 +59,15 @@ export const TaskSection = () => {
         {tasks.map((task) => (
           <Card 
             key={task.id} 
-            className="p-4 cursor-pointer hover:shadow-lg transition-all h-48"
-            onClick={() => {
-              setSelectedTask(task);
-              setIsEditing(true);
-            }}
+            className="p-4 cursor-pointer hover:shadow-lg transition-all h-48 relative"
           >
-            <div className="h-full flex flex-col">
+            <div 
+              className="h-full flex flex-col"
+              onClick={() => {
+                setSelectedTask(task);
+                setIsEditing(true);
+              }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">{task.name}</h3>
                 <div className="flex items-center gap-2">
@@ -73,6 +79,17 @@ export const TaskSection = () => {
                 {task.description}
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute bottom-2 right-2 text-destructive hover:text-destructive/90"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemove(task.id);
+              }}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
           </Card>
         ))}
       </div>

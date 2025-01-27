@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Plus, ChevronDown, Pencil } from "lucide-react";
+import { Plus, ChevronDown, Pencil, Trash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,10 @@ export const ToolSection = () => {
     setIsEditing(false);
   };
 
+  const handleRemove = (toolId: string) => {
+    setTools(tools.filter(tool => tool.id !== toolId));
+  };
+
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-semibold">Tools</h2>
@@ -55,13 +59,15 @@ export const ToolSection = () => {
         {tools.map((tool) => (
           <Card 
             key={tool.id} 
-            className="p-4 cursor-pointer hover:shadow-lg transition-all h-48"
-            onClick={() => {
-              setSelectedTool(tool);
-              setIsEditing(true);
-            }}
+            className="p-4 cursor-pointer hover:shadow-lg transition-all h-48 relative"
           >
-            <div className="h-full flex flex-col">
+            <div 
+              className="h-full flex flex-col"
+              onClick={() => {
+                setSelectedTool(tool);
+                setIsEditing(true);
+              }}
+            >
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold">{tool.name}</h3>
                 <div className="flex items-center gap-2">
@@ -73,6 +79,17 @@ export const ToolSection = () => {
                 {tool.description}
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute bottom-2 right-2 text-destructive hover:text-destructive/90"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemove(tool.id);
+              }}
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
           </Card>
         ))}
       </div>
