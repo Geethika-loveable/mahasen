@@ -143,7 +143,7 @@ const AgentFlow = () => {
         {/* Main Agent Box with Arrow */}
         <div className="flex flex-col items-center gap-8 mb-12">
           <div className="relative group">
-            <div className="absolute -inset-2.5 animate-gradient bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:from-pink-500 group-hover:via-purple-500 group-hover:to-blue-500 blur-lg opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-gradient-xy rounded-2xl"></div>
+            <div className="absolute -inset-2.5 animate-gradient bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 group-hover:from-pink-500 group-hover:via-purple-500 group-hover:to-blue-500 blur-md opacity-40 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-gradient-xy rounded-2xl"></div>
             <Card className="relative w-48 h-48 p-4 flex flex-col items-center justify-center text-center bg-background border-2 border-transparent hover:scale-105 transition-transform duration-300">
               <h3 className="font-semibold text-xl mb-2">Mahasen</h3>
               <p className="text-sm text-muted-foreground">Main Agent</p>
