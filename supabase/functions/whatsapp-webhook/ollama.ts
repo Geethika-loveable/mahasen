@@ -1,11 +1,11 @@
-import { getAISettings } from './ai-settings.ts';
-
 export async function generateAIResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
   try {
-    if (aiSettings.model_name === 'groq-llama-3.3-70b') {
+    if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
       return await generateGroqResponse(message, conversationHistory, aiSettings);
     } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
       return await generateGeminiResponse(message, conversationHistory, aiSettings);
+    } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
+      return await generateGroqResponse(message, conversationHistory, aiSettings);
     } else {
       throw new Error('Invalid model specified');
     }
@@ -32,7 +32,7 @@ async function generateGroqResponse(message: string, conversationHistory: string
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: aiSettings.model_name === 'deepseek-r1-distill-llama-70b' ? 'deepseek-r1-distill-llama-70b' : 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `${conversationHistory}\n${message}` }
@@ -62,35 +62,43 @@ async function generateGroqResponse(message: string, conversationHistory: string
 
 async function generateGeminiResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-  
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}` }]
-        },
-        ...conversationHistory.map(msg => ({
-          role: msg.role,
-          parts: [{ text: msg.content }]
-        }))
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        topK: 40
-      }
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to generate Gemini response');
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not set');
   }
+  
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}\n\n${conversationHistory}\n\nUser: ${message}` }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.9,
+          topK: 40,
+          maxOutputTokens: 1000,
+        }
+      })
+    });
 
-  const data = await response.json();
-  return data.candidates[0].content.parts[0].text;
+    if (!response.ok) {
+      throw new Error('Failed to generate Gemini response');
+    }
+
+    const data = await response.json();
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      throw new Error('Invalid response format from Gemini API');
+    }
+    return data.candidates[0].content.parts[0].text.trim();
+  } catch (error) {
+    console.error('Error with Gemini API:', error);
+    throw error;
+  }
 }
