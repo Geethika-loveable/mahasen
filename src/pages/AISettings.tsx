@@ -25,7 +25,7 @@ const AISettings = () => {
   const [contextMemoryLength, setContextMemoryLength] = useState<string>("2");
   const [conversationTimeout, setConversationTimeout] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [modelName, setModelName] = useState<AIModel>("groq-llama-3.3-70b-versatile");
+  const [modelName, setModelName] = useState<AIModel>("deepseek-r1-distill-llama-70b");
   const [isModelChangeDisabled, setIsModelChangeDisabled] = useState(false);
 
   useEffect(() => {
@@ -176,7 +176,7 @@ const AISettings = () => {
             modelName={modelName}
             onContextMemoryChange={setContextMemoryLength}
             onTimeoutChange={setConversationTimeout}
-            onModelChange={handleModelChange}
+            onModelChange={setModelName}
             isModelChangeDisabled={isModelChangeDisabled}
           />
 
