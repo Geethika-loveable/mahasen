@@ -5,14 +5,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types/common";
+
+type AIModel = Database['public']['Enums']['ai_model'];
 
 interface AdvancedSettingsProps {
   contextMemoryLength: string;
   conversationTimeout: number;
-  modelName: string;
+  modelName: AIModel;
   onContextMemoryChange: (value: string) => void;
   onTimeoutChange: (value: number) => void;
-  onModelChange: (value: string) => void;
+  onModelChange: (value: AIModel) => void;
   isModelChangeDisabled: boolean;
 }
 
@@ -51,7 +54,7 @@ export const AdvancedSettings = ({
     onTimeoutChange(numValue);
   };
 
-  const handleModelChange = (value: string) => {
+  const handleModelChange = (value: AIModel) => {
     if (isModelChangeDisabled) {
       toast({
         variant: "destructive",
