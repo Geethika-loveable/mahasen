@@ -7,17 +7,17 @@ export type TicketTables = {
       created_at: string
       customer_name: string
       id: number
-      platform: DatabaseEnums["platform_type"]
+      platform: DatabaseEnums["platform"]
+      type: string
       status: DatabaseEnums["ticket_status"]
       title: string
-      type: string
     }
     Insert: {
       body: string
       created_at?: string
       customer_name: string
       id?: number
-      platform: DatabaseEnums["platform_type"]
+      platform: DatabaseEnums["platform"]
       status?: DatabaseEnums["ticket_status"]
       title: string
       type: string
@@ -27,7 +27,7 @@ export type TicketTables = {
       created_at?: string
       customer_name?: string
       id?: number
-      platform?: DatabaseEnums["platform_type"]
+      platform?: DatabaseEnums["platform"]
       status?: DatabaseEnums["ticket_status"]
       title?: string
       type?: string
