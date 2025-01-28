@@ -21,7 +21,7 @@ export type Database = {
     };
     Functions: DatabaseFunctions;
     Enums: {
-      ai_model: "groq-llama-3.3-70b" | "gemini-2.0-flash-exp";
+      ai_model: "groq-llama-3.3-70b-versatile" | "gemini-2.0-flash-exp";
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful";
       message_status: "sent" | "delivered" | "read" | "failed";
       platform: "whatsapp" | "facebook" | "instagram" | "telegram";

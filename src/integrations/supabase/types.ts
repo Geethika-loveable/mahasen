@@ -266,7 +266,10 @@ export type Database = {
     }
     Enums: {
       agent_type: "welcome" | "sales" | "knowledge" | "support"
-      ai_model: "llama3.2:latest" | "gemini-2.0-flash-exp"
+      ai_model:
+        | "llama3.2:latest"
+        | "gemini-2.0-flash-exp"
+        | "groq-llama-3.3-70b-versatile"
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
       message_status: "sent" | "received"
       platform_type: "whatsapp" | "facebook" | "instagram"
