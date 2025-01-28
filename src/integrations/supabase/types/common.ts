@@ -1,16 +1,16 @@
 import { AgentTables } from './agents';
-import { AISettingsTables } from './ai-settings';
+import { AiSettingsTables } from './ai-settings';
 import { ConversationTables } from './conversations';
 import { KnowledgeBaseTables } from './knowledge-base';
 import { MessageTables } from './messages';
 import { MessengerTables } from './messenger';
 import { TicketTables } from './tickets';
-import { DatabaseFunctionDefs } from './database-functions';
+import { DatabaseFunctions } from './database-functions';
 
 export type Database = {
   public: {
     Tables: AgentTables &
-      AISettingsTables &
+      AiSettingsTables &
       ConversationTables &
       KnowledgeBaseTables &
       MessageTables &
@@ -19,7 +19,7 @@ export type Database = {
     Views: {
       [_ in never]: never;
     };
-    Functions: DatabaseFunctionDefs;
+    Functions: DatabaseFunctions;
     Enums: {
       ai_model: "groq-llama-3.3-70b" | "gemini-2.0-flash-exp";
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful";
