@@ -12,7 +12,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { AITone } from "@/types/ai";
+import type { Database } from "@/integrations/supabase/types/common";
 import { AdvancedSettings } from "@/components/ai-settings/AdvancedSettings";
+
+type AIModel = Database['public']['Enums']['ai_model'];
 
 const AISettings = () => {
   const navigate = useNavigate();
@@ -22,7 +25,7 @@ const AISettings = () => {
   const [contextMemoryLength, setContextMemoryLength] = useState<string>("2");
   const [conversationTimeout, setConversationTimeout] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [modelName, setModelName] = useState<"llama3.2:latest" | "gemini-2.0-flash-exp">("llama3.2:latest");
+  const [modelName, setModelName] = useState<AIModel>("groq-llama-3.3-70b-versatile");
   const [isModelChangeDisabled, setIsModelChangeDisabled] = useState(false);
 
   useEffect(() => {
@@ -75,7 +78,7 @@ const AISettings = () => {
     };
   }, [toast, navigate]);
 
-  const handleModelChange = (value: "llama3.2:latest" | "gemini-2.0-flash-exp") => {
+  const handleModelChange = (value: AIModel) => {
     setModelName(value);
     setIsModelChangeDisabled(true);
     setTimeout(() => {
