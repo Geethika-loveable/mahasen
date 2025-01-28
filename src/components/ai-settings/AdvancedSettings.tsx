@@ -88,8 +88,8 @@ export const AdvancedSettings = ({
                 <SelectValue placeholder="Select AI model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="llama3.2:latest">llama3.2:latest</SelectItem>
-                <SelectItem value="gemini-2.0-flash-exp">gemini-2.0-flash-exp</SelectItem>
+                <SelectItem value="groq-llama-3.3-70b">Groq: Llama 3.3 70B Versatile</SelectItem>
+                <SelectItem value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</SelectItem>
               </SelectContent>
             </Select>
             {isModelChangeDisabled && (

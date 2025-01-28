@@ -1,73 +1,96 @@
 import { getAISettings } from './ai-settings.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { generateGeminiResponse } from './ai-models/gemini.ts';
-import { generateOllamaResponse } from './ai-models/ollama.ts';
 
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function searchKnowledgeBase(userMessage: string, embedding: any): Promise<string> {
+export async function generateAIResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
   try {
-    const { data: matches, error } = await supabase.rpc('match_knowledge_base', {
-      query_text: userMessage,
-      query_embedding: embedding,
-      match_count: 5,
-      full_text_weight: 1.0,
-      semantic_weight: 1.0,
-      match_threshold: 0.5,
-      rrf_k: 50
-    });
-
-    if (error) {
-      console.error('Error searching knowledge base:', error);
-      return '';
-    }
-
-    if (!matches || matches.length === 0) {
-      console.log('No relevant matches found in knowledge base');
-      return '';
-    }
-
-    const contextContent = matches
-      .map(match => match.content)
-      .join('\n\n');
-
-    console.log('Found relevant knowledge base content:', contextContent);
-    return contextContent;
-  } catch (error) {
-    console.error('Error in knowledge base search:', error);
-    return '';
-  }
-}
-
-export async function generateAIResponse(userMessage: string, conversationHistory: string, aiSettings: any): Promise<string> {
-  try {
-    console.log('Using AI model:', aiSettings.model_name);
-
-    // Generate embedding for the user's question
-    console.log('Generating embedding for user query...');
-    const session = new Supabase.ai.Session('gte-small');
-    const embedding = await session.run(userMessage, {
-      mean_pool: true,
-      normalize: true,
-    });
-
-    // Search knowledge base with the embedding and user message
-    console.log('Searching knowledge base with embedding...');
-    const knowledgeBaseContext = await searchKnowledgeBase(userMessage, embedding);
-
-    // Prepare context with knowledge base content
-    const fullContext = `${aiSettings.behaviour}\n\nTone: ${aiSettings.tone}\n\nRelevant knowledge base content:\n${knowledgeBaseContext}\n\n${conversationHistory}\n\nUser: ${userMessage}\nAssistant:`;
-
-    if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
-      return await generateGeminiResponse(fullContext);
+    if (aiSettings.model_name === 'groq-llama-3.3-70b') {
+      return await generateGroqResponse(message, conversationHistory, aiSettings);
+    } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
+      return await generateGeminiResponse(message, conversationHistory, aiSettings);
     } else {
-      return await generateOllamaResponse(fullContext);
+      throw new Error('Invalid model specified');
     }
   } catch (error) {
     console.error('Error generating AI response:', error);
-    return "I apologize, but I'm having trouble processing your request at the moment. Please try again later.";
+    return "I apologize, but I'm having trouble processing your request right now. Please try again later.";
   }
+}
+
+async function generateGroqResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
+  const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+  if (!GROQ_API_KEY) {
+    throw new Error('GROQ_API_KEY is not set');
+  }
+
+  const systemPrompt = `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}`;
+  const fullPrompt = `${systemPrompt}\n\n${conversationHistory}\nUser: ${message}\nAssistant:`;
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `${conversationHistory}\n${message}` }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Groq API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorData
+      });
+      throw new Error(`Groq API responded with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('Error getting Groq response:', error);
+    throw error;
+  }
+}
+
+async function generateGeminiResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
+  const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+  
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}` }]
+        },
+        ...conversationHistory.map(msg => ({
+          role: msg.role,
+          parts: [{ text: msg.content }]
+        }))
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to generate Gemini response');
+  }
+
+  const data = await response.json();
+  return data.candidates[0].content.parts[0].text;
 }
