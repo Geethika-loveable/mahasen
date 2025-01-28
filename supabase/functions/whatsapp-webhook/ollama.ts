@@ -53,7 +53,14 @@ async function generateGroqResponse(message: string, conversationHistory: string
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
+    let responseText = data.choices[0].message.content.trim();
+    
+    // Format the response if it's from Deepseek model
+    if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
+      responseText = responseText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    }
+    
+    return responseText;
   } catch (error) {
     console.error('Error getting Groq response:', error);
     throw error;
