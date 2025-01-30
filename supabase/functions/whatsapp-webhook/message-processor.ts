@@ -1,79 +1,13 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { storeConversation } from "./database.ts";
-import { generateAIResponse } from "./ai-response.ts";
-import { sendWhatsAppMessage } from "./whatsapp.ts";
-import { getAISettings } from "./ai-settings.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { generateAIResponse } from './ollama.ts';
+import { sendWhatsAppMessage } from './whatsapp.ts';
+import { storeConversation } from './database.ts';
+import { getAISettings } from './ai-settings.ts';
 
+// Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function searchKnowledgeBase(query: string) {
-  try {
-    console.log('Generating embedding for query:', query);
-    
-    // Generate embedding for the query using the Edge Function
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/generate-embedding`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: query })
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error response from generate-embedding:', errorText);
-      return null;
-    }
-
-    const embeddingData = await response.json();
-    
-    if (!embeddingData?.embedding) {
-      console.error('No embedding in response:', embeddingData);
-      return null;
-    }
-
-    console.log('Successfully generated embedding');
-
-    // Search knowledge base using the embedding
-    const { data: matches, error: searchError } = await supabase.rpc(
-      'match_knowledge_base',
-      {
-        query_text: query,
-        query_embedding: embeddingData.embedding,
-        match_count: 3,
-        full_text_weight: 0.5,
-        semantic_weight: 0.5,
-        match_threshold: 0.5
-      }
-    );
-
-    if (searchError) {
-      console.error('Error searching knowledge base:', searchError);
-      return null;
-    }
-
-    console.log('Found matches:', matches);
-    return matches;
-  } catch (error) {
-    console.error('Error in searchKnowledgeBase:', error);
-    return null;
-  }
-}
-
-function formatKnowledgeBaseContext(matches: Array<{ content: string }> | null): string {
-  if (!matches || matches.length === 0) {
-    return '';
-  }
-
-  const contextPieces = matches.map(match => match.content.trim());
-  return `Here is some relevant context from the knowledge base:\n\n${contextPieces.join('\n\n')}\n\nPlease use this context to help answer the question.`;
-}
 
 export async function getRecentConversationHistory(userId: string, aiSettings: any): Promise<string> {
   try {
@@ -142,21 +76,12 @@ export async function processWhatsAppMessage(
     const aiSettings = await getAISettings();
     console.log('AI settings retrieved:', aiSettings);
 
-    // Search knowledge base for relevant context
-    console.log('Searching knowledge base for:', userMessage);
-    const knowledgeBaseMatches = await searchKnowledgeBase(userMessage);
-    const knowledgeBaseContext = formatKnowledgeBaseContext(knowledgeBaseMatches);
-    console.log('Knowledge base context:', knowledgeBaseContext);
-
     // Get conversation history using AI settings
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
     console.log('Retrieved conversation history:', conversationHistory);
 
-    // Combine context and history
-    const fullContext = `${knowledgeBaseContext}\n\n${conversationHistory}`.trim();
-
-    // Generate AI response using the retrieved settings and context
-    const aiResponse = await generateAIResponse(userMessage, fullContext, aiSettings);
+    // Generate AI response using the retrieved settings
+    const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
     console.log('AI Response:', aiResponse);
     
     // Send response back via WhatsApp
