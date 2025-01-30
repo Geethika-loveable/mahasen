@@ -12,8 +12,8 @@ export async function searchKnowledgeBase(query: string) {
       }
     );
 
-    if (embeddingError) {
-      console.error('Error generating embedding:', embeddingError);
+    if (embeddingError || !embeddingData?.embedding) {
+      console.error('Error generating embedding:', embeddingError || 'No embedding returned');
       return null;
     }
 

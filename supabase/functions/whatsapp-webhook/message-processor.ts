@@ -1,10 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { generateAIResponse } from './ollama.ts';
-import { sendWhatsAppMessage } from './whatsapp.ts';
-import { storeConversation } from './database.ts';
-import { getAISettings } from './ai-settings.ts';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { storeConversation } from "./database.ts";
+import { generateAIResponse } from "./ai-response.ts";
+import { sendWhatsAppMessage } from "./whatsapp.ts";
+import { getAISettings } from "./ai-settings.ts";
 
-// Initialize Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -14,7 +13,7 @@ async function searchKnowledgeBase(query: string) {
     console.log('Generating embedding for query:', query);
     
     // Generate embedding for the query using the Edge Function
-    const { data: embeddingData, error: embeddingError } = await fetch(
+    const response = await fetch(
       `${supabaseUrl}/functions/v1/generate-embedding`,
       {
         method: 'POST',
@@ -24,12 +23,22 @@ async function searchKnowledgeBase(query: string) {
         },
         body: JSON.stringify({ text: query })
       }
-    ).then(res => res.json());
+    );
 
-    if (embeddingError) {
-      console.error('Error generating embedding:', embeddingError);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error response from generate-embedding:', errorText);
       return null;
     }
+
+    const embeddingData = await response.json();
+    
+    if (!embeddingData?.embedding) {
+      console.error('No embedding in response:', embeddingData);
+      return null;
+    }
+
+    console.log('Successfully generated embedding');
 
     // Search knowledge base using the embedding
     const { data: matches, error: searchError } = await supabase.rpc(
@@ -39,7 +48,8 @@ async function searchKnowledgeBase(query: string) {
         query_embedding: embeddingData.embedding,
         match_count: 3,
         full_text_weight: 0.5,
-        semantic_weight: 0.5
+        semantic_weight: 0.5,
+        match_threshold: 0.5
       }
     );
 
@@ -48,6 +58,7 @@ async function searchKnowledgeBase(query: string) {
       return null;
     }
 
+    console.log('Found matches:', matches);
     return matches;
   } catch (error) {
     console.error('Error in searchKnowledgeBase:', error);

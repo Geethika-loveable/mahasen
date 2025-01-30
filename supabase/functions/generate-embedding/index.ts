@@ -27,14 +27,32 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('Initializing embedding session');
-    const session = new Supabase.ai.Session('gte-small');
+    // Call Gemini API to generate embedding
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')!;
+    
+    console.log('Calling Gemini API to generate embedding');
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/embedding-001:embedContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'embedding-001',
+          content: { text }
+        })
+      }
+    );
 
-    console.log('Generating embedding');
-    const embedding = await session.run(text, {
-      mean_pool: true,
-      normalize: true,
-    });
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Gemini API error:', errorData);
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const embedding = data.embedding.values;
 
     console.log('Successfully generated embedding');
 
