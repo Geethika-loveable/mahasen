@@ -1,3 +1,7 @@
+import { AgentsTable, AISettingsTable, ConversationsTable, KnowledgeBaseFilesTable, MessagesTable, MessengerSettingsTable, TicketsTable } from './tables';
+import { DatabaseFunctions } from './functions';
+import { DatabaseEnums } from './enums';
+
 export type Json =
   | string
   | number
