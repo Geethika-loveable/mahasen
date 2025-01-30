@@ -9,6 +9,52 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function generateEmbedding(text: string): Promise<number[]> {
+  console.log('Generating embedding for text:', text);
+  try {
+    const session = new Supabase.ai.Session('gte-small');
+    const embedding = await session.run(text, {
+      mean_pool: true,
+      normalize: true,
+    });
+    console.log('Generated embedding successfully');
+    return embedding;
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+    throw error;
+  }
+}
+
+async function searchKnowledgeBase(query: string, embedding: number[]): Promise<string> {
+  console.log('Searching knowledge base for:', query);
+  try {
+    const { data: matches, error } = await supabase.rpc('match_knowledge_base', {
+      query_text: query,
+      query_embedding: `[${embedding.join(',')}]`,
+      match_count: 3,
+      full_text_weight: 0.3,
+      semantic_weight: 0.7,
+      match_threshold: 0.5
+    });
+
+    if (error) {
+      console.error('Error searching knowledge base:', error);
+      return '';
+    }
+
+    if (!matches || matches.length === 0) {
+      console.log('No matches found in knowledge base');
+      return '';
+    }
+
+    console.log('Found matches:', matches);
+    return matches.map(match => match.content).join('\n\n');
+  } catch (error) {
+    console.error('Error in knowledge base search:', error);
+    return '';
+  }
+}
+
 export async function getRecentConversationHistory(userId: string, aiSettings: any): Promise<string> {
   try {
     const timeoutHours = aiSettings.conversation_timeout_hours || 1;
@@ -76,12 +122,25 @@ export async function processWhatsAppMessage(
     const aiSettings = await getAISettings();
     console.log('AI settings retrieved:', aiSettings);
 
+    // Generate embedding for the user message
+    console.log('Generating embedding for user message');
+    const embedding = await generateEmbedding(userMessage);
+    
+    // Search knowledge base using the embedding
+    console.log('Searching knowledge base with embedding');
+    const knowledgeBaseContext = await searchKnowledgeBase(userMessage, embedding);
+    console.log('Knowledge base context:', knowledgeBaseContext);
+
     // Get conversation history using AI settings
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
     console.log('Retrieved conversation history:', conversationHistory);
 
-    // Generate AI response using the retrieved settings
-    const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
+    // Combine knowledge base context with conversation history
+    const fullContext = `${knowledgeBaseContext}\n\n${conversationHistory}`.trim();
+    console.log('Combined context:', fullContext);
+
+    // Generate AI response using the retrieved settings and context
+    const aiResponse = await generateAIResponse(userMessage, fullContext, aiSettings);
     console.log('AI Response:', aiResponse);
     
     // Send response back via WhatsApp

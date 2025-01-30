@@ -1,11 +1,11 @@
-export async function generateAIResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
+export async function generateAIResponse(message: string, context: string, aiSettings: any): Promise<string> {
   try {
     if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
-      return await generateGroqResponse(message, conversationHistory, aiSettings);
+      return await generateGroqResponse(message, context, aiSettings);
     } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
-      return await generateGeminiResponse(message, conversationHistory, aiSettings);
+      return await generateGeminiResponse(message, context, aiSettings);
     } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
-      return await generateGroqResponse(message, conversationHistory, aiSettings);
+      return await generateGroqResponse(message, context, aiSettings);
     } else {
       throw new Error('Invalid model specified');
     }
@@ -15,14 +15,15 @@ export async function generateAIResponse(message: string, conversationHistory: s
   }
 }
 
-async function generateGroqResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
+async function generateGroqResponse(message: string, context: string, aiSettings: any): Promise<string> {
   const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
   if (!GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY is not set');
   }
 
   const systemPrompt = `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}`;
-  const fullPrompt = `${systemPrompt}\n\n${conversationHistory}\nUser: ${message}\nAssistant:`;
+  const contextPrompt = context ? `\nRelevant context from knowledge base and recent conversation:\n${context}` : '';
+  const fullPrompt = `${systemPrompt}${contextPrompt}\n\nUser: ${message}\nAssistant:`;
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -35,7 +36,7 @@ async function generateGroqResponse(message: string, conversationHistory: string
         model: aiSettings.model_name === 'deepseek-r1-distill-llama-70b' ? 'deepseek-r1-distill-llama-70b' : 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `${conversationHistory}\n${message}` }
+          { role: 'user', content: `${contextPrompt}\n${message}` }
         ],
         temperature: 0.7,
         max_tokens: 1000,
@@ -67,7 +68,7 @@ async function generateGroqResponse(message: string, conversationHistory: string
   }
 }
 
-async function generateGeminiResponse(message: string, conversationHistory: string, aiSettings: any): Promise<string> {
+async function generateGeminiResponse(message: string, context: string, aiSettings: any): Promise<string> {
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not set');
@@ -83,7 +84,7 @@ async function generateGeminiResponse(message: string, conversationHistory: stri
         contents: [
           {
             role: 'user',
-            parts: [{ text: `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}\n\n${conversationHistory}\n\nUser: ${message}` }]
+            parts: [{ text: `You are an AI assistant with a ${aiSettings.tone} tone. ${aiSettings.behaviour || ''}\n\n${context ? `Context:\n${context}\n\n` : ''}User: ${message}` }]
           }
         ],
         generationConfig: {
