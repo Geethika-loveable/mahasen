@@ -27,7 +27,8 @@ export async function searchKnowledgeBase(query: string) {
         query_embedding: embeddingData.embedding,
         match_count: 3,
         full_text_weight: 0.5,
-        semantic_weight: 0.5
+        semantic_weight: 0.5,
+        match_threshold: 0.5
       }
     );
 
