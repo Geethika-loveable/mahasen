@@ -17,7 +17,7 @@ export const useIntentDetection = () => {
       analysis,
       messageId,
       conversationContext
-    );
+    ) as TicketCreationInfo; // Add type assertion here to ensure correct type
 
     setCurrentAnalysis(analysis);
     setTicketInfo(ticketInfo);
