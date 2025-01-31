@@ -54,7 +54,7 @@ export class TicketService {
       intent_type: ticketType!,
       context,
       confidence_score: analysis.confidence,
-      escalation_reason
+      escalation_reason: escalationReason
     };
 
     try {
