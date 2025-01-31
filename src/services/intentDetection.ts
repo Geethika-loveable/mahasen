@@ -1,17 +1,21 @@
-import { IntentAnalysis, IntentType, UrgencyLevel, TicketCreationInfo } from '@/types/intent';
+import { IntentAnalysis, IntentType, UrgencyLevel } from '@/types/intent';
 
 export class IntentDetectionService {
-  private static readonly ESCALATION_THRESHOLD = 0.7;
   private static readonly HUMAN_AGENT_KEYWORDS = [
     'speak to human',
     'real person',
     'agent',
     'representative',
-    'supervisor'
+    'supervisor',
+    'connect to human',
+    'talk to human',
+    'real human',
+    'human agent'
   ];
 
+  private static readonly ESCALATION_THRESHOLD = 0.7;
+
   private static calculateIntentClarity(message: string, intent: IntentType): number {
-    // Clear explicit intent markers
     const explicitMarkers = {
       SUPPORT_REQUEST: ['help', 'issue', 'problem', 'error', 'not working'],
       HUMAN_AGENT_REQUEST: this.HUMAN_AGENT_KEYWORDS,
@@ -83,9 +87,7 @@ export class IntentDetectionService {
   }
 
   private static detectProductMentions(message: string): string[] {
-    // This should be enhanced with actual product catalog
     const products: string[] = [];
-    // Add product detection logic here
     return products;
   }
 
@@ -106,10 +108,27 @@ export class IntentDetectionService {
     return null;
   }
 
-  public static analyzeIntent(
+  static analyzeIntent(
     message: string,
     knowledgeBaseContext: string | null = null
   ): IntentAnalysis {
+    const lowerMessage = message.toLowerCase();
+    
+    // First check for explicit human agent requests
+    if (this.HUMAN_AGENT_KEYWORDS.some(keyword => lowerMessage.includes(keyword))) {
+      return {
+        intent: 'HUMAN_AGENT_REQUEST',
+        confidence: 0.95, // High confidence for explicit requests
+        requires_escalation: true,
+        escalation_reason: 'Customer explicitly requested human agent',
+        detected_entities: {
+          product_mentions: [],
+          issue_type: 'Human Agent Request',
+          urgency_level: 'high' as UrgencyLevel
+        }
+      };
+    }
+
     let highestConfidence = 0;
     let detectedIntent: IntentType = 'GENERAL_QUERY';
 
@@ -155,24 +174,21 @@ export class IntentDetectionService {
     analysis: IntentAnalysis,
     messageId: string,
     context: string
-  ): TicketCreationInfo {
+  ) {
     const shouldCreateTicket = 
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
       (analysis.intent === 'SUPPORT_REQUEST' && analysis.detected_entities.urgency_level === 'high');
 
-    const ticketType = 
-      analysis.intent === 'ORDER_PLACEMENT' ? 'ORDER' :
-      analysis.intent === 'HUMAN_AGENT_REQUEST' ? 'REQUEST' : 'SUPPORT';
-
-    const priority = 
-      analysis.detected_entities.urgency_level === 'high' ? 'HIGH' :
-      analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW';
+    if (!shouldCreateTicket) {
+      return null;
+    }
 
     return {
-      create_ticket: shouldCreateTicket,
-      ticket_type: ticketType,
-      priority,
+      create_ticket: true,
+      ticket_type: analysis.intent === 'ORDER_PLACEMENT' ? 'ORDER' : 'SUPPORT',
+      priority: analysis.detected_entities.urgency_level === 'high' ? 'HIGH' :
+               analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW',
       context,
       message_id: messageId,
       required_actions: this.generateRequiredActions(analysis)
