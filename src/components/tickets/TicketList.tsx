@@ -11,7 +11,7 @@ import { ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { TicketDetailsDialog } from "./TicketDetailsDialog";
-import { Ticket } from "@/types/ticket";
+import { Ticket, TicketPriority } from "@/types/ticket";
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -36,7 +36,7 @@ const platformColors = {
   instagram: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300",
 };
 
-const priorityColors = {
+const priorityColors: Record<TicketPriority, string> = {
   LOW: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
   MEDIUM: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
   HIGH: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
