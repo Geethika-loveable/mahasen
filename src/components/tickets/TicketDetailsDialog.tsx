@@ -17,6 +17,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { MessageSquare } from "lucide-react";
 
 interface Ticket {
   id: number;
@@ -27,6 +29,12 @@ interface Ticket {
   status: "New" | "In Progress" | "Escalated" | "Completed";
   created_at: string;
   body: string;
+  message_id?: string;
+  conversation_id?: string;
+  intent_type?: string;
+  context?: string;
+  confidence_score?: number;
+  escalation_reason?: string;
 }
 
 interface TicketDetailsDialogProps {
@@ -52,6 +60,7 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
   const [status, setStatus] = useState<Ticket["status"]>(ticket?.status || "New");
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleStatusChange = async (newStatus: Ticket["status"]) => {
     if (!ticket) return;
@@ -79,6 +88,13 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleGoToMessage = () => {
+    if (ticket?.conversation_id) {
+      onOpenChange(false); // Close the dialog
+      navigate(`/chat/${ticket.conversation_id}`);
     }
   };
 
@@ -132,10 +148,51 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
             <p>{ticket.type}</p>
           </div>
 
+          {ticket.intent_type && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Intent Type</h4>
+              <p>{ticket.intent_type}</p>
+            </div>
+          )}
+
+          {ticket.confidence_score !== undefined && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Confidence Score</h4>
+              <p>{(ticket.confidence_score * 100).toFixed(1)}%</p>
+            </div>
+          )}
+
+          {ticket.escalation_reason && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Escalation Reason</h4>
+              <p>{ticket.escalation_reason}</p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <h4 className="font-medium">Description</h4>
             <p className="whitespace-pre-wrap">{ticket.body}</p>
           </div>
+
+          {ticket.context && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Conversation Context</h4>
+              <p className="whitespace-pre-wrap">{ticket.context}</p>
+            </div>
+          )}
+
+          {ticket.conversation_id && (
+            <div className="pt-4">
+              <Button
+                onClick={handleGoToMessage}
+                className="w-full"
+                variant="outline"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Go to Message
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

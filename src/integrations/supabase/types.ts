@@ -212,9 +212,15 @@ export type Database = {
       tickets: {
         Row: {
           body: string
+          confidence_score: number | null
+          context: string | null
+          conversation_id: string | null
           created_at: string
           customer_name: string
+          escalation_reason: string | null
           id: number
+          intent_type: string | null
+          message_id: string | null
           platform: Database["public"]["Enums"]["platform_type"]
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
@@ -222,9 +228,15 @@ export type Database = {
         }
         Insert: {
           body: string
+          confidence_score?: number | null
+          context?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_name: string
+          escalation_reason?: string | null
           id?: number
+          intent_type?: string | null
+          message_id?: string | null
           platform: Database["public"]["Enums"]["platform_type"]
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
@@ -232,15 +244,36 @@ export type Database = {
         }
         Update: {
           body?: string
+          confidence_score?: number | null
+          context?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_name?: string
+          escalation_reason?: string | null
           id?: number
+          intent_type?: string | null
+          message_id?: string | null
           platform?: Database["public"]["Enums"]["platform_type"]
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tickets_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
