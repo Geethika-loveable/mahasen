@@ -1,32 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
-import { format } from "date-fns";
 import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 import { TicketList } from "@/components/tickets/TicketList";
 import { TicketHeader } from "@/components/tickets/TicketHeader";
-
-interface Ticket {
-  id: number;
-  title: string;
-  customer_name: string;
-  platform: "whatsapp" | "facebook" | "instagram";
-  type: string;
-  status: "New" | "In Progress" | "Escalated" | "Completed";
-  created_at: string;
-  body: string;
-}
+import { Ticket } from "@/types/ticket";
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -71,7 +50,7 @@ const Tickets = () => {
             tickets={tickets}
             loading={loading}
             sortConfig={sortConfig}
-            onSortChange={setSortConfig}
+            onSortChange={(config) => setSortConfig(config)}
           />
         </div>
       </div>

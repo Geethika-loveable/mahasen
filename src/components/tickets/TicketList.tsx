@@ -11,20 +11,7 @@ import { ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { TicketDetailsDialog } from "./TicketDetailsDialog";
-
-interface Ticket {
-  id: number;
-  title: string;
-  customer_name: string;
-  platform: "whatsapp" | "facebook" | "instagram";
-  type: string;
-  status: "New" | "In Progress" | "Escalated" | "Completed";
-  created_at: string;
-  body: string;
-  assigned_to?: string;
-  priority?: "LOW" | "MEDIUM" | "HIGH";
-  last_updated_at?: string;
-}
+import { Ticket } from "@/types/ticket";
 
 interface TicketListProps {
   tickets: Ticket[];
