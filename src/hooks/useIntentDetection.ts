@@ -13,16 +13,16 @@ export const useIntentDetection = () => {
     conversationContext: string = ''
   ) => {
     const analysis = IntentDetectionService.analyzeIntent(message, knowledgeBaseContext);
-    const ticketInfo = IntentDetectionService.generateTicketInfo(
+    const generatedTicketInfo = IntentDetectionService.generateTicketInfo(
       analysis,
       messageId,
       conversationContext
-    ) as TicketCreationInfo; // Add type assertion here to ensure correct type
+    );
 
     setCurrentAnalysis(analysis);
-    setTicketInfo(ticketInfo);
+    setTicketInfo(generatedTicketInfo);
 
-    return { analysis, ticketInfo };
+    return { analysis, ticketInfo: generatedTicketInfo };
   };
 
   return {

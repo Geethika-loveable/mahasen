@@ -1,4 +1,4 @@
-import { IntentAnalysis, IntentType, UrgencyLevel } from '@/types/intent';
+import { IntentAnalysis, IntentType, UrgencyLevel, TicketCreationInfo, TicketType, TicketPriority } from '@/types/intent';
 
 export class IntentDetectionService {
   private static readonly HUMAN_AGENT_KEYWORDS = [
@@ -10,101 +10,69 @@ export class IntentDetectionService {
     'connect to human',
     'talk to human',
     'real human',
-    'human agent'
+    'human agent',
+    'need help',
+    'frustrated',
+    'not helping',
+    'useless'
   ];
 
-  private static readonly ESCALATION_THRESHOLD = 0.7;
+  private static readonly URGENCY_KEYWORDS = {
+    high: ['urgent', 'emergency', 'asap', 'immediately', 'right now', 'critical'],
+    medium: ['soon', 'important', 'needed', 'waiting', 'priority'],
+    low: []
+  };
 
-  private static calculateIntentClarity(message: string, intent: IntentType): number {
-    const explicitMarkers = {
-      SUPPORT_REQUEST: ['help', 'issue', 'problem', 'error', 'not working'],
+  private static readonly ISSUE_TYPES = {
+    technical: ['error', 'bug', 'not working', 'broken', 'failed', 'issue'],
+    billing: ['payment', 'charge', 'bill', 'invoice', 'refund', 'subscription'],
+    account: ['login', 'password', 'access', 'account', 'profile'],
+    product: ['product', 'item', 'order', 'delivery', 'shipping']
+  };
+
+  private static calculateConfidence(
+    message: string,
+    intent: IntentType,
+    contextMatch: number
+  ): number {
+    const keywordMatches = {
       HUMAN_AGENT_REQUEST: this.HUMAN_AGENT_KEYWORDS,
+      SUPPORT_REQUEST: ['help', 'support', 'issue', 'problem', 'error'],
       ORDER_PLACEMENT: ['buy', 'purchase', 'order', 'price', 'cost'],
       GENERAL_QUERY: ['what', 'how', 'when', 'where', 'can you']
     };
 
-    const markers = explicitMarkers[intent];
-    const matchCount = markers.filter(marker => 
-      message.toLowerCase().includes(marker.toLowerCase())
+    const keywords = keywordMatches[intent];
+    const matchCount = keywords.filter(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
     ).length;
 
-    if (matchCount > 2) return 0.4;
-    if (matchCount > 0) return 0.3;
-    return 0.1;
-  }
-
-  private static calculateContextMatch(
-    message: string, 
-    knowledgeBaseContext: string | null
-  ): number {
-    if (!knowledgeBaseContext) return 0;
-
-    const messageWords = new Set(message.toLowerCase().split(' '));
-    const contextWords = new Set(knowledgeBaseContext.toLowerCase().split(' '));
+    const baseConfidence = matchCount > 0 ? 0.3 + (matchCount * 0.1) : 0.1;
+    const contextBonus = contextMatch * 0.3;
     
-    const intersection = new Set(
-      [...messageWords].filter(word => contextWords.has(word))
-    );
-
-    const matchRatio = intersection.size / messageWords.size;
-    
-    if (matchRatio > 0.5) return 0.3;
-    if (matchRatio > 0.2) return 0.2;
-    return 0.1;
-  }
-
-  private static calculateRequiredInfoScore(
-    message: string, 
-    intent: IntentType
-  ): number {
-    const requiredInfo = {
-      SUPPORT_REQUEST: ['issue', 'tried', 'when', 'error'],
-      HUMAN_AGENT_REQUEST: ['reason', 'tried', 'issue'],
-      ORDER_PLACEMENT: ['quantity', 'shipping', 'address', 'payment'],
-      GENERAL_QUERY: ['question', 'about', 'what']
-    };
-
-    const required = requiredInfo[intent];
-    const matchCount = required.filter(info => 
-      message.toLowerCase().includes(info.toLowerCase())
-    ).length;
-
-    const score = (matchCount / required.length) * 0.3;
-    return Math.min(score, 0.3);
+    return Math.min(baseConfidence + contextBonus, 1.0);
   }
 
   private static detectUrgencyLevel(message: string): UrgencyLevel {
-    const urgentKeywords = ['urgent', 'emergency', 'asap', 'immediately'];
-    const mediumKeywords = ['soon', 'important', 'needed'];
+    const lowerMessage = message.toLowerCase();
     
-    if (urgentKeywords.some(keyword => message.toLowerCase().includes(keyword))) {
+    if (this.URGENCY_KEYWORDS.high.some(keyword => lowerMessage.includes(keyword))) {
       return 'high';
     }
-    if (mediumKeywords.some(keyword => message.toLowerCase().includes(keyword))) {
+    if (this.URGENCY_KEYWORDS.medium.some(keyword => lowerMessage.includes(keyword))) {
       return 'medium';
     }
     return 'low';
   }
 
-  private static detectProductMentions(message: string): string[] {
-    const products: string[] = [];
-    return products;
-  }
-
   private static detectIssueType(message: string): string | null {
-    const issueTypes = {
-      'login': ['login', 'sign in', 'cannot access'],
-      'payment': ['payment', 'charge', 'bill'],
-      'technical': ['error', 'bug', 'not working'],
-      'account': ['account', 'profile', 'settings']
-    };
-
-    for (const [type, keywords] of Object.entries(issueTypes)) {
-      if (keywords.some(keyword => message.toLowerCase().includes(keyword))) {
+    const lowerMessage = message.toLowerCase();
+    
+    for (const [type, keywords] of Object.entries(this.ISSUE_TYPES)) {
+      if (keywords.some(keyword => lowerMessage.includes(keyword))) {
         return type;
       }
     }
-
     return null;
   }
 
@@ -118,63 +86,94 @@ export class IntentDetectionService {
     if (this.HUMAN_AGENT_KEYWORDS.some(keyword => lowerMessage.includes(keyword))) {
       return {
         intent: 'HUMAN_AGENT_REQUEST',
-        confidence: 0.95, // High confidence for explicit requests
+        confidence: 0.95,
         requires_escalation: true,
         escalation_reason: 'Customer explicitly requested human agent',
         detected_entities: {
           product_mentions: [],
-          issue_type: 'Human Agent Request',
-          urgency_level: 'high' as UrgencyLevel
+          issue_type: this.detectIssueType(message),
+          urgency_level: this.detectUrgencyLevel(message)
         }
       };
     }
 
-    let highestConfidence = 0;
-    let detectedIntent: IntentType = 'GENERAL_QUERY';
+    // Calculate context match score
+    const contextMatch = knowledgeBaseContext 
+      ? this.calculateContextMatch(message, knowledgeBaseContext)
+      : 0;
 
-    // Check each intent type
+    // Determine primary intent
+    let primaryIntent: IntentType = 'GENERAL_QUERY';
+    let highestConfidence = 0;
+
     const intents: IntentType[] = [
       'SUPPORT_REQUEST',
-      'HUMAN_AGENT_REQUEST',
       'ORDER_PLACEMENT',
       'GENERAL_QUERY'
     ];
 
     for (const intent of intents) {
-      const intentClarity = this.calculateIntentClarity(message, intent);
-      const contextMatch = this.calculateContextMatch(message, knowledgeBaseContext);
-      const requiredInfo = this.calculateRequiredInfoScore(message, intent);
-      
-      const totalConfidence = intentClarity + contextMatch + requiredInfo;
-      
-      if (totalConfidence > highestConfidence) {
-        highestConfidence = totalConfidence;
-        detectedIntent = intent;
+      const confidence = this.calculateConfidence(message, intent, contextMatch);
+      if (confidence > highestConfidence) {
+        highestConfidence = confidence;
+        primaryIntent = intent;
       }
     }
 
-    const requires_escalation = highestConfidence < this.ESCALATION_THRESHOLD;
+    const urgencyLevel = this.detectUrgencyLevel(message);
+    const requires_escalation = 
+      highestConfidence < 0.7 || 
+      urgencyLevel === 'high' ||
+      (primaryIntent === 'SUPPORT_REQUEST' && urgencyLevel !== 'low');
 
     return {
-      intent: detectedIntent,
+      intent: primaryIntent,
       confidence: highestConfidence,
       requires_escalation,
       escalation_reason: requires_escalation 
-        ? 'Low confidence in intent detection' 
+        ? this.getEscalationReason(primaryIntent, highestConfidence, urgencyLevel)
         : null,
       detected_entities: {
-        product_mentions: this.detectProductMentions(message),
+        product_mentions: [],
         issue_type: this.detectIssueType(message),
-        urgency_level: this.detectUrgencyLevel(message)
+        urgency_level: urgencyLevel
       }
     };
+  }
+
+  private static calculateContextMatch(message: string, context: string): number {
+    const messageWords = new Set(message.toLowerCase().split(' '));
+    const contextWords = new Set(context.toLowerCase().split(' '));
+    
+    const intersection = new Set(
+      [...messageWords].filter(word => contextWords.has(word))
+    );
+
+    return intersection.size / messageWords.size;
+  }
+
+  private static getEscalationReason(
+    intent: IntentType,
+    confidence: number,
+    urgency: UrgencyLevel
+  ): string {
+    if (confidence < 0.7) {
+      return 'Low confidence in automated response';
+    }
+    if (urgency === 'high') {
+      return 'High urgency request requires immediate attention';
+    }
+    if (intent === 'SUPPORT_REQUEST') {
+      return 'Complex support request requires human assistance';
+    }
+    return 'Request requires human verification';
   }
 
   public static generateTicketInfo(
     analysis: IntentAnalysis,
     messageId: string,
     context: string
-  ) {
+  ): TicketCreationInfo | null {
     const shouldCreateTicket = 
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
@@ -184,11 +183,18 @@ export class IntentDetectionService {
       return null;
     }
 
+    const ticketType: TicketType = 
+      analysis.intent === 'ORDER_PLACEMENT' ? 'ORDER' : 
+      analysis.intent === 'HUMAN_AGENT_REQUEST' ? 'REQUEST' : 'SUPPORT';
+
+    const priority: TicketPriority = 
+      analysis.detected_entities.urgency_level === 'high' ? 'HIGH' :
+      analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW';
+
     return {
       create_ticket: true,
-      ticket_type: analysis.intent === 'ORDER_PLACEMENT' ? 'ORDER' : 'SUPPORT',
-      priority: analysis.detected_entities.urgency_level === 'high' ? 'HIGH' :
-               analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW',
+      ticket_type: ticketType,
+      priority,
       context,
       message_id: messageId,
       required_actions: this.generateRequiredActions(analysis)
@@ -203,8 +209,8 @@ export class IntentDetectionService {
     }
 
     if (analysis.intent === 'ORDER_PLACEMENT') {
-      actions.push('Collect shipping information');
-      actions.push('Verify product availability');
+      actions.push('Verify order details');
+      actions.push('Check inventory availability');
     }
 
     if (analysis.intent === 'SUPPORT_REQUEST') {
