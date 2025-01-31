@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 import { TicketList } from "@/components/tickets/TicketList";
 import { TicketHeader } from "@/components/tickets/TicketHeader";
-import { Ticket } from "@/types/ticket";
+import { Ticket, TicketType } from "@/types/ticket";
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -26,7 +25,14 @@ const Tickets = () => {
           .order('id', { ascending: true });
 
         if (error) throw error;
-        setTickets(data || []);
+        
+        // Transform the data to ensure intent_type is of type TicketType
+        const transformedData = (data || []).map(ticket => ({
+          ...ticket,
+          intent_type: ticket.intent_type as TicketType | undefined
+        }));
+
+        setTickets(transformedData);
       } catch (error) {
         console.error("Error fetching tickets:", error);
       } finally {
