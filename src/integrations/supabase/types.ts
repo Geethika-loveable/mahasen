@@ -209,8 +209,53 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_history: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string | null
+          id: number
+          new_assigned_to: string | null
+          new_status: string | null
+          previous_assigned_to: string | null
+          previous_status: string | null
+          ticket_id: number | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: number
+          new_assigned_to?: string | null
+          new_status?: string | null
+          previous_assigned_to?: string | null
+          previous_status?: string | null
+          ticket_id?: number | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: number
+          new_assigned_to?: string | null
+          new_status?: string | null
+          previous_assigned_to?: string | null
+          previous_status?: string | null
+          ticket_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
+          assigned_to: string | null
           body: string
           confidence_score: number | null
           context: string | null
@@ -220,13 +265,16 @@ export type Database = {
           escalation_reason: string | null
           id: number
           intent_type: string | null
+          last_updated_at: string | null
           message_id: string | null
           platform: Database["public"]["Enums"]["platform_type"]
+          priority: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
         }
         Insert: {
+          assigned_to?: string | null
           body: string
           confidence_score?: number | null
           context?: string | null
@@ -236,13 +284,16 @@ export type Database = {
           escalation_reason?: string | null
           id?: number
           intent_type?: string | null
+          last_updated_at?: string | null
           message_id?: string | null
           platform: Database["public"]["Enums"]["platform_type"]
+          priority?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
         }
         Update: {
+          assigned_to?: string | null
           body?: string
           confidence_score?: number | null
           context?: string | null
@@ -252,8 +303,10 @@ export type Database = {
           escalation_reason?: string | null
           id?: number
           intent_type?: string | null
+          last_updated_at?: string | null
           message_id?: string | null
           platform?: Database["public"]["Enums"]["platform_type"]
+          priority?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           type?: string

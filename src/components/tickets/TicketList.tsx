@@ -21,6 +21,9 @@ interface Ticket {
   status: "New" | "In Progress" | "Escalated" | "Completed";
   created_at: string;
   body: string;
+  assigned_to?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH";
+  last_updated_at?: string;
 }
 
 interface TicketListProps {
@@ -44,6 +47,12 @@ const platformColors = {
   whatsapp: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300",
   facebook: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
   instagram: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300",
+};
+
+const priorityColors = {
+  LOW: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+  MEDIUM: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  HIGH: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
 };
 
 export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: TicketListProps) => {
@@ -102,21 +111,27 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
             <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('status')}>
               Status {getSortIcon('status')}
             </TableHead>
+            <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('priority')}>
+              Priority {getSortIcon('priority')}
+            </TableHead>
+            <TableHead className="w-32">
+              Assigned To
+            </TableHead>
             <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('created_at')}>
-              Date & Time {getSortIcon('created_at')}
+              Created {getSortIcon('created_at')}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={9} className="text-center py-8">
                 Loading tickets...
               </TableCell>
             </TableRow>
           ) : sortedTickets.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={9} className="text-center py-8">
                 No tickets found
               </TableCell>
             </TableRow>
@@ -140,6 +155,16 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
                   <Badge variant="secondary" className={statusColors[ticket.status]}>
                     {ticket.status}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {ticket.priority && (
+                    <Badge variant="secondary" className={priorityColors[ticket.priority]}>
+                      {ticket.priority}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {ticket.assigned_to || '-'}
                 </TableCell>
                 <TableCell>
                   {format(new Date(ticket.created_at), "MMM d, yyyy HH:mm")}
