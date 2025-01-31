@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 import { TicketList } from "@/components/tickets/TicketList";
 import { TicketHeader } from "@/components/tickets/TicketHeader";
-import { Ticket, TicketType } from "@/types/ticket";
+import { Ticket, TicketType, TicketPriority } from "@/types/ticket";
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -26,10 +26,18 @@ const Tickets = () => {
 
         if (error) throw error;
         
-        // Transform the data to ensure intent_type is of type TicketType
+        // Transform the data to ensure all fields match their expected types
         const transformedData = (data || []).map(ticket => ({
           ...ticket,
-          intent_type: ticket.intent_type as TicketType | undefined
+          intent_type: ticket.intent_type as TicketType | undefined,
+          priority: (ticket.priority || 'LOW') as TicketPriority,
+          assigned_to: ticket.assigned_to || undefined,
+          confidence_score: ticket.confidence_score || undefined,
+          context: ticket.context || undefined,
+          conversation_id: ticket.conversation_id || undefined,
+          escalation_reason: ticket.escalation_reason || undefined,
+          message_id: ticket.message_id || undefined,
+          last_updated_at: ticket.last_updated_at || undefined
         }));
 
         setTickets(transformedData);
