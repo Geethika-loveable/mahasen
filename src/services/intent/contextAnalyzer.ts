@@ -120,6 +120,49 @@ export class ContextAnalyzer {
     return confidence;
   }
 
+  static requiresEscalation(
+    intent: IntentType,
+    confidence: number,
+    urgencyLevel: UrgencyLevel
+  ): { required: boolean; reason: string | null } {
+    // Check confidence threshold
+    if (confidence < 0.7) {
+      return {
+        required: true,
+        reason: 'Low confidence in automated response'
+      };
+    }
+
+    // Check urgency level
+    if (urgencyLevel === 'high') {
+      return {
+        required: true,
+        reason: 'High urgency request requires immediate attention'
+      };
+    }
+
+    // Check intent-specific conditions
+    if (intent === 'SUPPORT_REQUEST' && urgencyLevel !== 'low') {
+      return {
+        required: true,
+        reason: 'Complex support request requires human assistance'
+      };
+    }
+
+    if (intent === 'HUMAN_AGENT_REQUEST') {
+      return {
+        required: true,
+        reason: 'Customer explicitly requested human agent'
+      };
+    }
+
+    // Default case - no escalation needed
+    return {
+      required: false,
+      reason: null
+    };
+  }
+
   static detectUrgencyLevel(message: string): UrgencyLevel {
     const lowerMessage = message.toLowerCase();
     
