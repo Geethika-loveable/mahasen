@@ -9,9 +9,15 @@ export class IntentDetectionService {
     previousMessages: string[] = []
   ): IntentAnalysis {
     const lowerMessage = message.toLowerCase();
+    console.log('Analyzing intent for message:', message);
     
-    // First check for explicit human agent requests
-    if (HUMAN_AGENT_KEYWORDS.some(keyword => lowerMessage.includes(keyword))) {
+    // First check for explicit human agent requests with enhanced detection
+    const hasHumanAgentRequest = HUMAN_AGENT_KEYWORDS.some(keyword => 
+      lowerMessage.includes(keyword.toLowerCase())
+    );
+
+    if (hasHumanAgentRequest) {
+      console.log('Human agent request detected');
       return {
         intent: 'HUMAN_AGENT_REQUEST',
         confidence: 0.95,
@@ -20,7 +26,7 @@ export class IntentDetectionService {
         detected_entities: {
           product_mentions: [],
           issue_type: ContextAnalyzer.detectIssueType(message),
-          urgency_level: ContextAnalyzer.detectUrgencyLevel(message)
+          urgency_level: 'high'
         }
       };
     }
@@ -57,7 +63,7 @@ export class IntentDetectionService {
     const { required: requires_escalation, reason: escalation_reason } = 
       ContextAnalyzer.requiresEscalation(primaryIntent, highestConfidence, urgencyLevel);
 
-    return {
+    const analysis = {
       intent: primaryIntent,
       confidence: highestConfidence,
       requires_escalation,
@@ -68,6 +74,9 @@ export class IntentDetectionService {
         urgency_level: urgencyLevel
       }
     };
+
+    console.log('Intent analysis result:', analysis);
+    return analysis;
   }
 
   static generateTicketInfo(

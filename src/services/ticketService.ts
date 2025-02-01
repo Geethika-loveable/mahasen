@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { IntentAnalysis } from "@/types/intent";
-import { TicketType } from "@/types/ticket";
-import type { Platform, TicketStatus } from "@/types/ticket";
+import { TicketType, Platform, TicketStatus, TicketPriority } from "@/types/ticket";
+import { useToast } from "@/hooks/use-toast";
 
 export class TicketService {
   static async createTicket(
@@ -13,6 +13,8 @@ export class TicketService {
     messageContent: string,
     context: string
   ) {
+    console.log('Creating ticket with analysis:', analysis);
+    
     // Enhanced ticket creation logic
     const shouldCreateTicket = 
       analysis.requires_escalation ||
@@ -20,13 +22,14 @@ export class TicketService {
       (analysis.intent === 'SUPPORT_REQUEST' && analysis.detected_entities.urgency_level === 'high');
 
     if (!shouldCreateTicket) {
+      console.log('No ticket needed based on analysis');
       return null;
     }
 
     // Determine ticket type and priority based on intent and urgency
     let ticketType: TicketType;
     let title: string;
-    let priority: 'HIGH' | 'MEDIUM' | 'LOW';
+    let priority: TicketPriority;
     let escalationReason = analysis.escalation_reason;
 
     if (analysis.intent === 'HUMAN_AGENT_REQUEST') {
@@ -47,7 +50,7 @@ export class TicketService {
                 analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW';
     }
 
-    const ticketInfo = {
+    const ticketData = {
       title,
       customer_name: customerName,
       platform,
@@ -60,17 +63,21 @@ export class TicketService {
       confidence_score: analysis.confidence,
       escalation_reason: escalationReason,
       priority,
-      status: 'New' as TicketStatus // Explicitly type as TicketStatus enum
+      status: 'New' as TicketStatus
     };
 
     try {
+      console.log('Attempting to create ticket with data:', ticketData);
       const { data, error } = await supabase
         .from('tickets')
-        .insert(ticketInfo)
+        .insert(ticketData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating ticket:', error);
+        throw error;
+      }
       
       console.log('Created ticket:', data);
       return data;
