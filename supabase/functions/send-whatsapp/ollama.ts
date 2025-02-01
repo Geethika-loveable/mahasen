@@ -21,7 +21,10 @@ async function getOllamaResponse(prompt: string, OLLAMA_BASE_URL: string, contex
       `You are a helpful AI assistant with access to a knowledge base. ${context}` :
       'Please provide a general response if no specific information is available.';
 
-    const ollamaUrl = `${OLLAMA_BASE_URL}/api/generate`;
+    // Remove any trailing slashes and ensure proper URL format
+    const baseUrl = OLLAMA_BASE_URL.replace(/\/+$/, '');
+    const ollamaUrl = `${baseUrl}/api/generate`;
+    
     console.log('Full Ollama URL:', ollamaUrl);
 
     const response = await fetch(ollamaUrl, {
