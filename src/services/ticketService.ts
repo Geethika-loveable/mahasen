@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { IntentAnalysis } from "@/types/intent";
 import { TicketType } from "@/types/ticket";
+import type { Platform, TicketStatus } from "@/types/ticket";
 
 export class TicketService {
   static async createTicket(
@@ -8,7 +9,7 @@ export class TicketService {
     conversationId: string,
     analysis: IntentAnalysis,
     customerName: string,
-    platform: 'whatsapp' | 'facebook' | 'instagram',
+    platform: Platform,
     messageContent: string,
     context: string
   ) {
@@ -59,7 +60,7 @@ export class TicketService {
       confidence_score: analysis.confidence,
       escalation_reason: escalationReason,
       priority,
-      status: 'New'
+      status: 'New' as TicketStatus // Explicitly type as TicketStatus enum
     };
 
     try {
