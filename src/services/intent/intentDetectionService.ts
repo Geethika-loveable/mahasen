@@ -11,10 +11,12 @@ export class IntentDetectionService {
     const lowerMessage = message.toLowerCase();
     console.log('Analyzing intent for message:', message);
     
-    // First check for explicit human agent requests with enhanced detection
-    const hasHumanAgentRequest = HUMAN_AGENT_KEYWORDS.some(keyword => 
-      lowerMessage.includes(keyword.toLowerCase())
-    );
+    // Enhanced human agent request detection with fuzzy matching
+    const hasHumanAgentRequest = HUMAN_AGENT_KEYWORDS.some(keyword => {
+      const keywordLower = keyword.toLowerCase();
+      return lowerMessage.includes(keywordLower) || 
+             this.calculateSimilarity(lowerMessage, keywordLower) > 0.8;
+    });
 
     if (hasHumanAgentRequest) {
       console.log('Human agent request detected');
@@ -77,6 +79,43 @@ export class IntentDetectionService {
 
     console.log('Intent analysis result:', analysis);
     return analysis;
+  }
+
+  private static calculateSimilarity(str1: string, str2: string): number {
+    const longer = str1.length > str2.length ? str1 : str2;
+    const shorter = str1.length > str2.length ? str2 : str1;
+    
+    if (longer.length === 0) return 1.0;
+    
+    return (longer.length - this.editDistance(longer, shorter)) / longer.length;
+  }
+
+  private static editDistance(str1: string, str2: string): number {
+    const matrix: number[][] = [];
+    
+    for (let i = 0; i <= str1.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str2.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str1.length; i++) {
+      for (let j = 1; j <= str2.length; j++) {
+        if (str1[i-1] === str2[j-1]) {
+          matrix[i][j] = matrix[i-1][j-1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i-1][j-1] + 1,
+            matrix[i][j-1] + 1,
+            matrix[i-1][j] + 1
+          );
+        }
+      }
+    }
+    
+    return matrix[str1.length][str2.length];
   }
 
   static generateTicketInfo(

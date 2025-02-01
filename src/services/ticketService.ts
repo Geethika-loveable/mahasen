@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { IntentAnalysis } from "@/types/intent";
 import { TicketType, Platform, TicketStatus, TicketPriority } from "@/types/ticket";
-import { useToast } from "@/hooks/use-toast";
 
 export class TicketService {
   static async createTicket(
@@ -15,7 +14,7 @@ export class TicketService {
   ) {
     console.log('Creating ticket with analysis:', analysis);
     
-    // Enhanced ticket creation logic
+    // Enhanced ticket creation logic with more detailed logging
     const shouldCreateTicket = 
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
@@ -27,18 +26,15 @@ export class TicketService {
     }
 
     // Determine ticket type and priority based on intent and urgency
-    let ticketType: TicketType;
-    let title: string;
-    let priority: TicketPriority;
-    let escalationReason = analysis.escalation_reason;
+    let ticketType: TicketType = 'REQUEST';
+    let title: string = 'Human Agent Request';
+    let priority: TicketPriority = 'HIGH';
+    let escalationReason = analysis.escalation_reason || 'Customer explicitly requested human agent';
 
     if (analysis.intent === 'HUMAN_AGENT_REQUEST') {
       ticketType = 'REQUEST';
       title = 'Human Agent Request';
       priority = 'HIGH';
-      if (!escalationReason) {
-        escalationReason = 'Customer explicitly requested human agent';
-      }
     } else if (analysis.intent === 'ORDER_PLACEMENT') {
       ticketType = 'ORDER';
       title = 'New Order Request';
