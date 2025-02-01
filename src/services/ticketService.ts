@@ -12,7 +12,7 @@ export class TicketService {
     messageContent: string,
     context: string
   ) {
-    // Determine if we need to create a ticket based on analysis
+    // Enhanced ticket creation logic
     const shouldCreateTicket = 
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
@@ -22,23 +22,28 @@ export class TicketService {
       return null;
     }
 
-    // Determine ticket type based on intent
+    // Determine ticket type and priority based on intent and urgency
     let ticketType: TicketType;
     let title: string;
+    let priority: 'HIGH' | 'MEDIUM' | 'LOW';
     let escalationReason = analysis.escalation_reason;
 
     if (analysis.intent === 'HUMAN_AGENT_REQUEST') {
       ticketType = 'REQUEST';
       title = 'Human Agent Request';
+      priority = 'HIGH';
       if (!escalationReason) {
         escalationReason = 'Customer explicitly requested human agent';
       }
     } else if (analysis.intent === 'ORDER_PLACEMENT') {
       ticketType = 'ORDER';
       title = 'New Order Request';
+      priority = analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 'MEDIUM';
     } else {
       ticketType = 'SUPPORT';
       title = analysis.requires_escalation ? 'Complex Support Request' : 'Support Request';
+      priority = analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 
+                analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW';
     }
 
     const ticketInfo = {
@@ -52,7 +57,9 @@ export class TicketService {
       intent_type: ticketType,
       context,
       confidence_score: analysis.confidence,
-      escalation_reason: escalationReason
+      escalation_reason: escalationReason,
+      priority,
+      status: 'New'
     };
 
     try {
@@ -63,6 +70,8 @@ export class TicketService {
         .single();
 
       if (error) throw error;
+      
+      console.log('Created ticket:', data);
       return data;
     } catch (error) {
       console.error('Error creating ticket:', error);

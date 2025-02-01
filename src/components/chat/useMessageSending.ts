@@ -40,21 +40,35 @@ export const useMessageSending = (
         .eq("id", id)
         .single();
 
-      // Analyze message intent
+      // Analyze message intent with more context
       const analysis = IntentDetectionService.analyzeIntent(newMessage);
       console.log('Intent analysis:', analysis);
 
-      // Create ticket if needed
+      // Create ticket for human agent requests or high urgency
       if (messageData && conversation) {
-        await TicketService.createTicket(
-          messageData.id,
-          id,
-          analysis,
-          conversation.contact_name,
-          conversation.platform,
-          newMessage,
-          "Agent message"
-        );
+        const shouldCreateTicket = 
+          analysis.intent === 'HUMAN_AGENT_REQUEST' ||
+          (analysis.intent === 'SUPPORT_REQUEST' && analysis.detected_entities.urgency_level === 'high') ||
+          analysis.requires_escalation;
+
+        if (shouldCreateTicket) {
+          const ticket = await TicketService.createTicket(
+            messageData.id,
+            id,
+            analysis,
+            conversation.contact_name,
+            conversation.platform,
+            newMessage,
+            "Agent message"
+          );
+
+          if (ticket) {
+            toast({
+              title: "Ticket Created",
+              description: "A support ticket has been created for this request.",
+            });
+          }
+        }
       }
 
       // Send the message through WhatsApp using the Edge Function
