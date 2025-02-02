@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TicketDetailsDialog } from "./TicketDetailsDialog";
 import { Ticket, TicketPriority } from "@/types/ticket";
 
@@ -45,6 +45,12 @@ const priorityColors: Record<TicketPriority, string> = {
 export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: TicketListProps) => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleSort = (key: keyof Ticket) => {
     onSortChange({
@@ -75,8 +81,12 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
     return 0;
   });
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <>
+    <div className="relative">
       <Table>
         <TableHeader>
           <TableRow>
@@ -167,6 +177,6 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
       />
-    </>
+    </div>
   );
 };
