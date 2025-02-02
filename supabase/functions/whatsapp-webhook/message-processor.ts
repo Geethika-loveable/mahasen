@@ -145,8 +145,8 @@ export async function processWhatsAppMessage(
       });
 
       if (shouldCreateTicket) {
+        console.log('Ticket creation criteria met, creating ticket...');
         try {
-          console.log('Creating ticket for message:', messageId);
           const ticket = await createTicket({
             messageId,
             conversationId: conversation.id,
