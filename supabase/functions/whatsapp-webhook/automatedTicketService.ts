@@ -1,4 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 
 interface IntentAnalysis {
   intent: string;
@@ -24,72 +29,41 @@ interface AutomatedTicketParams {
 
 export class AutomatedTicketService {
   static async generateTicket(params: AutomatedTicketParams) {
-    console.log('Starting automated ticket generation with params:', params);
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
-
-    try {
-      const shouldCreateTicket = this.evaluateTicketCreationCriteria(params.analysis);
-      
-      if (!shouldCreateTicket) {
-        console.log('Ticket creation criteria not met');
-        return null;
-      }
-
-      const priority = this.determinePriority(params.analysis);
-      const title = this.generateTicketTitle(params.analysis);
-      const ticketType = this.determineTicketType(params.analysis);
-
-      const ticket = {
-        title,
+    const shouldCreateTicket = this.evaluateTicketCreationCriteria(params.analysis);
+    console.log('Ticket creation criteria met:', shouldCreateTicket);
+    
+    if (shouldCreateTicket) {
+      const ticketData = {
+        title: this.generateTicketTitle(params.analysis),
         customer_name: params.customerName,
         platform: params.platform,
         type: params.analysis.detected_entities?.issue_type || "General",
         body: params.messageContent,
         message_id: params.messageId,
         conversation_id: params.conversationId,
-        intent_type: ticketType,
+        intent_type: this.determineTicketType(params.analysis),
         context: params.context,
         confidence_score: params.analysis.confidence,
         escalation_reason: params.analysis.escalation_reason || undefined,
-        priority,
+        priority: this.determinePriority(params.analysis),
         status: 'New'
       };
 
-      const { data: createdTicket, error: ticketError } = await supabase
+      const { data: ticket, error } = await supabase
         .from('tickets')
-        .insert(ticket)
+        .insert(ticketData)
         .select()
         .single();
 
-      if (ticketError) {
-        console.error('Error creating ticket:', ticketError);
-        throw ticketError;
+      if (error) {
+        console.error('Error creating ticket:', error);
+        throw error;
       }
 
-      // Create ticket history entry
-      const { error: historyError } = await supabase
-        .from('ticket_history')
-        .insert({
-          ticket_id: createdTicket.id,
-          action: 'Ticket Created',
-          new_status: 'New',
-          changed_by: 'System'
-        });
-
-      if (historyError) {
-        console.error('Error creating ticket history:', historyError);
-        throw historyError;
-      }
-
-      console.log('Automated ticket created successfully:', createdTicket);
-      return createdTicket;
-    } catch (error) {
-      console.error('Error in automated ticket generation:', error);
-      throw error;
+      return ticket;
     }
+    
+    return null;
   }
 
   private static evaluateTicketCreationCriteria(analysis: IntentAnalysis): boolean {
@@ -114,7 +88,7 @@ export class AutomatedTicketService {
     return 'LOW';
   }
 
-  private static determineTicketType(analysis: IntentAnalysis): 'SUPPORT' | 'REQUEST' | 'ORDER' {
+  private static determineTicketType(analysis: IntentAnalysis): string {
     switch (analysis.intent) {
       case 'ORDER_PLACEMENT':
         return 'ORDER';
