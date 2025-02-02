@@ -69,6 +69,7 @@ async function createTicket(
   try {
     console.log('Creating ticket with analysis:', analysis);
 
+    // Generate a unique ID for the ticket
     const ticketData = {
       title: analysis.intent === 'HUMAN_AGENT_REQUEST' 
         ? 'Human Agent Request' 
@@ -92,7 +93,7 @@ async function createTicket(
 
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .insert(ticketData)
+      .insert([ticketData])  // Wrap ticketData in an array
       .select()
       .single();
 
@@ -144,7 +145,20 @@ export async function processWhatsAppMessage(
     await sendWhatsAppMessage(userId, responseText, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
 
     // Store the conversation and get the conversation ID
-    const conversationId = await storeConversation(supabase, userId, userName, userMessage, responseText);
+    const { data: conversation } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('contact_number', userId)
+      .single();
+
+    if (!conversation) {
+      throw new Error('Failed to find or create conversation');
+    }
+
+    const conversationId = conversation.id;
+
+    // Store messages
+    await storeConversation(supabase, userId, userName, userMessage, responseText);
 
     // Check if we need to create a ticket based on the full AI response object
     const shouldCreateTicket = 
@@ -155,10 +169,12 @@ export async function processWhatsAppMessage(
          aiResponse.detected_entities?.urgency_level === 'high')
       ));
 
+    console.log('Should create ticket?', shouldCreateTicket, 'AI Response:', aiResponse);
+
     if (shouldCreateTicket && typeof aiResponse === 'object') {
       console.log('Ticket creation criteria met:', aiResponse);
       try {
-        await createTicket(
+        const ticket = await createTicket(
           messageId,
           conversationId,
           aiResponse,
@@ -167,8 +183,10 @@ export async function processWhatsAppMessage(
           userMessage,
           conversationHistory
         );
+        console.log('Ticket created:', ticket);
       } catch (ticketError) {
         console.error('Failed to create ticket:', ticketError);
+        // Don't throw here to prevent message processing from failing
       }
     }
   } catch (error) {
