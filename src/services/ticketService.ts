@@ -71,7 +71,7 @@ export class TicketService {
       });
 
       console.log('Ticket created successfully:', ticket);
-      return ticket;
+      return ticket as Ticket;
     } catch (error) {
       console.error('Failed to create ticket:', error);
       throw error;
