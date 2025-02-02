@@ -15,84 +15,38 @@ interface AutomatedTicketParams {
 
 export class AutomatedTicketService {
   static async generateTicket(params: AutomatedTicketParams) {
-    console.log('Starting automated ticket generation with params:', params);
-
-    try {
-      const shouldCreateTicket = this.evaluateTicketCreationCriteria(params.analysis);
-      
-      if (!shouldCreateTicket) {
-        console.log('Ticket creation criteria not met');
-        return null;
-      }
-
-      console.log('Proceeding with ticket creation...');
-
-      const priority = this.determinePriority(params.analysis);
-      const title = this.generateTicketTitle(params.analysis);
-      const ticketType = this.determineTicketType(params.analysis);
-
+    const shouldCreateTicket = this.evaluateTicketCreationCriteria(params.analysis);
+    console.log('Ticket creation criteria met:', shouldCreateTicket);
+    
+    if (shouldCreateTicket) {
       const ticketData = {
-        title,
+        title: this.generateTicketTitle(params.analysis),
         customerName: params.customerName,
         platform: params.platform,
         type: params.analysis.detected_entities?.issue_type || "General",
         body: params.messageContent,
         messageId: params.messageId,
         conversationId: params.conversationId,
-        intentType: ticketType,
+        intentType: this.determineTicketType(params.analysis),
         context: params.context,
         confidenceScore: params.analysis.confidence,
         escalationReason: params.analysis.escalation_reason || undefined,
-        priority
+        priority: this.determinePriority(params.analysis)
       };
 
-      console.log('Attempting to create ticket with data:', ticketData);
-
-      try {
-        const ticket = await TicketService.createTicket(ticketData);
-        console.log('Ticket created successfully:', ticket);
-        
-        toast({
-          title: "Ticket Created",
-          description: `Ticket #${ticket.id} has been created for ${params.customerName}`,
-        });
-
-        return ticket;
-      } catch (ticketError) {
-        console.error('Error in TicketService.createTicket:', ticketError);
-        toast({
-          variant: "destructive",
-          title: "Failed to Create Ticket",
-          description: ticketError instanceof Error ? ticketError.message : "An unknown error occurred",
-        });
-        throw ticketError;
-      }
-    } catch (error) {
-      console.error('Error in automated ticket generation:', error);
-      toast({
-        variant: "destructive",
-        title: "Automated Ticket Generation Error",
-        description: error instanceof Error ? error.message : "An unknown error occurred",
-      });
-      throw error;
+      return await TicketService.createTicket(ticketData);
     }
+    
+    return null;
   }
 
   private static evaluateTicketCreationCriteria(analysis: IntentAnalysis): boolean {
-    const shouldCreate = (
+    return (
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
       (analysis.intent === 'SUPPORT_REQUEST' && 
        analysis.detected_entities?.urgency_level === 'high')
     );
-    
-    console.log('Ticket creation criteria evaluation:', {
-      analysis,
-      shouldCreate,
-      reason: shouldCreate ? 'Criteria met' : 'Criteria not met'
-    });
-
-    return shouldCreate;
   }
 
   private static determinePriority(analysis: IntentAnalysis): TicketPriority {
