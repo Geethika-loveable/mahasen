@@ -13,6 +13,13 @@ export const useIntentDetection = () => {
     conversationContext: string = '',
     previousMessages: string[] = []
   ) => {
+    console.log('Analyzing message with context:', {
+      message,
+      knowledgeBaseContext,
+      conversationContext,
+      previousMessages
+    });
+
     const analysis = IntentDetectionService.analyzeIntent(
       message, 
       knowledgeBaseContext,
@@ -24,6 +31,9 @@ export const useIntentDetection = () => {
       messageId,
       conversationContext
     );
+
+    console.log('Analysis result:', analysis);
+    console.log('Generated ticket info:', generatedTicketInfo);
 
     setCurrentAnalysis(analysis);
     setTicketInfo(generatedTicketInfo);
