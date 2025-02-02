@@ -21,8 +21,8 @@ async function generateGroqResponse(message: string, context: string, aiSettings
     throw new Error('GROQ_API_KEY is not set');
   }
 
-  // Combine all necessary prompts
-  const intentDetectionPrompt = `
+  // Enhanced system prompt combining all contexts
+  const systemPrompt = `
 You are an AI assistant responsible for analyzing user intents and determining when human intervention is needed.
 
 Intent Detection Guidelines:
@@ -30,12 +30,16 @@ Intent Detection Guidelines:
 2. Evaluate message urgency (high/medium/low)
 3. Detect support requests vs general queries
 4. Consider user frustration signals
+5. Use provided knowledge base context for informed decisions
+6. Consider conversation history for better context
 
 Escalation Criteria:
 - Explicit human agent requests
 - High urgency situations
 - Complex support needs
 - Low confidence in automated response
+- Multiple repeated queries
+- Technical issues requiring specialist knowledge
 
 Available Intent Types:
 - HUMAN_AGENT_REQUEST
@@ -43,7 +47,19 @@ Available Intent Types:
 - ORDER_PLACEMENT
 - GENERAL_QUERY
 
-You must respond in the following JSON format:
+Urgency Levels:
+- high: immediate attention needed, critical issues, explicit urgency
+- medium: standard support requests, non-critical issues
+- low: general inquiries, information requests
+
+Knowledge Base Context:
+${context}
+
+Admin Settings:
+Tone: ${aiSettings.tone}
+${aiSettings.behaviour || ''}
+
+You MUST respond in the following JSON format:
 {
   "intent": "HUMAN_AGENT_REQUEST" | "SUPPORT_REQUEST" | "ORDER_PLACEMENT" | "GENERAL_QUERY",
   "confidence": 0.0-1.0,
@@ -55,15 +71,23 @@ You must respond in the following JSON format:
     "urgency_level": "high" | "medium" | "low"
   },
   "response": string
-}`;
+}
 
-  const knowledgeBaseContext = context ? `\nRelevant knowledge base context:\n${context}` : '';
-  const adminBehaviorPrompt = `\nTone: ${aiSettings.tone}\n${aiSettings.behaviour || ''}`;
-
-  const fullPrompt = `${intentDetectionPrompt}${adminBehaviorPrompt}${knowledgeBaseContext}\n\nUser message: ${message}\n\nProvide your analysis and response in the specified JSON format:`;
+The response field should use the specified tone and include:
+1. Acknowledgment of the user's request
+2. Clear next steps or information
+3. Relevant knowledge base information if available
+4. Escalation status if applicable`;
 
   try {
-    console.log('Sending full prompt to Groq:', fullPrompt);
+    console.log('Sending enhanced prompt to Groq with full context:', {
+      message,
+      context: context.substring(0, 100) + '...',
+      aiSettings: {
+        tone: aiSettings.tone,
+        behaviour: aiSettings.behaviour?.substring(0, 100) + '...'
+      }
+    });
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -74,8 +98,8 @@ You must respond in the following JSON format:
       body: JSON.stringify({
         model: aiSettings.model_name === 'deepseek-r1-distill-llama-70b' ? 'deepseek-r1-distill-llama-70b' : 'llama-3.3-70b-versatile',
         messages: [
-          { role: 'system', content: intentDetectionPrompt },
-          { role: 'user', content: `${adminBehaviorPrompt}${knowledgeBaseContext}\n\nUser message: ${message}` }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
         ],
         temperature: 0.7,
         max_tokens: 1000,
@@ -96,16 +120,20 @@ You must respond in the following JSON format:
     let responseText = data.choices[0].message.content.trim();
     
     try {
-      // Parse the JSON response
+      // Parse and validate the JSON response
       const parsedResponse = JSON.parse(responseText);
       console.log('Parsed LLM response:', parsedResponse);
+
+      // Validate response structure
+      if (!parsedResponse.intent || !parsedResponse.confidence || parsedResponse.requires_escalation === undefined) {
+        throw new Error('Invalid response structure');
+      }
 
       // Store the analysis for ticket creation if needed
       if (parsedResponse.requires_escalation || 
           parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
           (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-        // The actual ticket creation is handled in the message processing flow
-        console.log('Ticket creation may be needed:', parsedResponse);
+        console.log('Ticket creation criteria met:', parsedResponse);
       }
 
       // Return only the response part for the user
@@ -120,6 +148,7 @@ You must respond in the following JSON format:
   }
 }
 
+// Update Gemini response generation with similar enhanced prompt
 async function generateGeminiResponse(message: string, context: string, aiSettings: any): Promise<string> {
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
   if (!GEMINI_API_KEY) {

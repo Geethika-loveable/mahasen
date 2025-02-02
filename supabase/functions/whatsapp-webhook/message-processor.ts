@@ -117,17 +117,21 @@ export async function processWhatsAppMessage(
   userName: string
 ): Promise<void> {
   try {
+    console.log('Processing message:', {
+      messageId,
+      userMessage,
+      userId,
+      userName
+    });
+
     // Fetch AI settings
-    console.log('Fetching AI settings...');
     const aiSettings = await getAISettings();
     console.log('AI settings retrieved:', aiSettings);
 
     // Generate embedding for the user message
-    console.log('Generating embedding for user message');
     const embedding = await generateEmbedding(userMessage);
     
     // Search knowledge base using the embedding
-    console.log('Searching knowledge base with embedding');
     const knowledgeBaseContext = await searchKnowledgeBase(userMessage, embedding);
     console.log('Knowledge base context:', knowledgeBaseContext);
 
@@ -135,11 +139,18 @@ export async function processWhatsAppMessage(
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
     console.log('Retrieved conversation history:', conversationHistory);
 
-    // Combine knowledge base context with conversation history
-    const fullContext = `${knowledgeBaseContext}\n\n${conversationHistory}`.trim();
+    // Combine all context
+    const fullContext = `
+Knowledge Base Context:
+${knowledgeBaseContext}
+
+Conversation History:
+${conversationHistory}
+`.trim();
+
     console.log('Combined context:', fullContext);
 
-    // Generate AI response using the retrieved settings and context
+    // Generate AI response using all available context
     const aiResponse = await generateAIResponse(userMessage, fullContext, aiSettings);
     console.log('AI Response:', aiResponse);
     
