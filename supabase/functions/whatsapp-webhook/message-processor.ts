@@ -15,9 +15,9 @@ async function getRecentConversationHistory(userId: string, aiSettings: any): Pr
     
     // Get the conversation ID for this user
     const { data: conversation } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('contact_number', userId)
+      .from("conversations")
+      .select("id")
+      .eq("contact_number", userId)
       .single();
 
     if (!conversation) {
@@ -27,10 +27,10 @@ async function getRecentConversationHistory(userId: string, aiSettings: any): Pr
 
     // Fetch recent messages based on AI settings context length
     const { data: messages, error } = await supabase
-      .from('messages')
-      .select('content, sender_name, created_at')
-      .eq('conversation_id', conversation.id)
-      .order('created_at', { ascending: false })
+      .from("messages")
+      .select("content, sender_name, created_at")
+      .eq("conversation_id", conversation.id)
+      .order("created_at", { ascending: false })
       .limit(aiSettings.context_memory_length || 2);
 
     if (error) {
@@ -67,16 +67,20 @@ async function createTicket(
   context: string
 ) {
   try {
+    console.log('Creating ticket with analysis:', analysis);
+
     const ticketData = {
-      title: 'Human Agent Request',
+      title: analysis.intent === 'HUMAN_AGENT_REQUEST' 
+        ? 'Human Agent Request' 
+        : `${analysis.detected_entities?.issue_type || 'Support'} Request`,
       customer_name: customerName,
       platform,
-      type: analysis.detected_entities?.issue_type || 'General',
+      type: analysis.detected_entities?.issue_type || "General",
       body: messageContent,
       message_id: messageId,
       conversation_id: conversationId,
       intent_type: analysis.intent,
-      context,
+      context: context,
       confidence_score: analysis.confidence,
       escalation_reason: analysis.escalation_reason,
       priority: analysis.detected_entities?.urgency_level === 'high' ? 'HIGH' : 
@@ -84,17 +88,17 @@ async function createTicket(
       status: 'New'
     };
 
-    console.log('Creating ticket with data:', ticketData);
+    console.log('Prepared ticket data:', ticketData);
 
-    const { data: ticket, error } = await supabase
+    const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
       .insert(ticketData)
       .select()
       .single();
 
-    if (error) {
-      console.error('Error creating ticket:', error);
-      throw error;
+    if (ticketError) {
+      console.error('Error creating ticket:', ticketError);
+      throw ticketError;
     }
 
     console.log('Ticket created successfully:', ticket);
@@ -153,15 +157,19 @@ export async function processWhatsAppMessage(
 
     if (shouldCreateTicket && typeof aiResponse === 'object') {
       console.log('Ticket creation criteria met:', aiResponse);
-      await createTicket(
-        messageId,
-        conversationId,
-        aiResponse,
-        userName,
-        'whatsapp',
-        userMessage,
-        conversationHistory
-      );
+      try {
+        await createTicket(
+          messageId,
+          conversationId,
+          aiResponse,
+          userName,
+          'whatsapp',
+          userMessage,
+          conversationHistory
+        );
+      } catch (ticketError) {
+        console.error('Failed to create ticket:', ticketError);
+      }
     }
   } catch (error) {
     console.error('Error processing message:', error);
