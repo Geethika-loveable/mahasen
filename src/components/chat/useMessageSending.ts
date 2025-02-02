@@ -2,8 +2,9 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { WhatsAppMessage } from "@/types/chat";
 import { useToast } from "@/hooks/use-toast";
-import { IntentDetectionService } from "@/services/intentDetection";
+import { IntentDetectionService } from "@/services/intent/intentDetectionService";
 import { TicketService } from "@/services/ticketService";
+import { useIntentDetection } from "@/hooks/useIntentDetection";
 
 export const useMessageSending = (
   id: string | undefined,
@@ -13,6 +14,7 @@ export const useMessageSending = (
 ) => {
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
+  const { analyzeMessage } = useIntentDetection();
 
   const sendMessage = async (newMessage: string) => {
     if (!newMessage.trim() || !id || !contactNumber) return;
@@ -40,12 +42,31 @@ export const useMessageSending = (
         .eq("id", id)
         .single();
 
-      // Analyze message intent with more context
-      const analysis = IntentDetectionService.analyzeIntent(newMessage);
-      console.log('Intent analysis:', analysis);
+      // Get recent messages for context
+      const { data: recentMessages } = await supabase
+        .from("messages")
+        .select("content")
+        .eq("conversation_id", id)
+        .order("created_at", { ascending: false })
+        .limit(5);
 
-      // Create ticket for human agent requests or high urgency
-      if (messageData && conversation) {
+      const previousMessages = recentMessages?.map(msg => msg.content) || [];
+
+      // Analyze message intent with more context
+      console.log('Starting intent analysis with context...');
+      const { analysis, ticketInfo } = analyzeMessage(
+        newMessage,
+        messageData.id,
+        null, // knowledgeBaseContext will be handled by the service
+        conversation?.contact_name || 'Unknown',
+        previousMessages
+      );
+
+      console.log('Intent analysis result:', analysis);
+      console.log('Ticket info:', ticketInfo);
+
+      // Create ticket if needed
+      if (messageData && conversation && ticketInfo) {
         const shouldCreateTicket = 
           analysis.intent === 'HUMAN_AGENT_REQUEST' ||
           (analysis.intent === 'SUPPORT_REQUEST' && analysis.detected_entities.urgency_level === 'high') ||
