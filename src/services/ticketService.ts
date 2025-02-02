@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Platform, Ticket, TicketPriority, TicketStatus, TicketType } from "@/types/ticket";
+import { toast } from "@/hooks/use-toast";
 
 interface CreateTicketParams {
   title: string;
@@ -59,7 +60,23 @@ export class TicketService {
 
       if (ticketError) {
         console.error('Error creating ticket:', ticketError);
+        toast({
+          variant: "destructive",
+          title: "Ticket Creation Failed",
+          description: ticketError.message,
+        });
         throw ticketError;
+      }
+
+      if (!ticket) {
+        const error = new Error('No ticket data returned after creation');
+        console.error(error);
+        toast({
+          variant: "destructive",
+          title: "Ticket Creation Failed",
+          description: "No ticket data returned after creation",
+        });
+        throw error;
       }
 
       // Create ticket history entry

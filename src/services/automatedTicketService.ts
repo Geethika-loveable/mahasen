@@ -1,6 +1,7 @@
 import { IntentAnalysis } from "@/types/intent";
 import { Platform, TicketPriority, TicketType } from "@/types/ticket";
 import { TicketService } from "./ticketService";
+import { toast } from "@/hooks/use-toast";
 
 interface AutomatedTicketParams {
   messageId: string;
@@ -24,29 +25,57 @@ export class AutomatedTicketService {
         return null;
       }
 
+      console.log('Ticket creation criteria is met, proceeding with ticket creation');
+
       const priority = this.determinePriority(params.analysis);
       const title = this.generateTicketTitle(params.analysis);
       const ticketType = this.mapIntentToTicketType(params.analysis.intent);
 
-      const ticket = await TicketService.createTicket({
-        title,
-        customerName: params.customerName,
-        platform: params.platform,
-        type: params.analysis.detected_entities?.issue_type || "General",
-        body: params.messageContent,
-        messageId: params.messageId,
-        conversationId: params.conversationId,
-        intentType: ticketType,
-        context: params.context,
-        confidenceScore: params.analysis.confidence,
-        escalationReason: params.analysis.escalation_reason || undefined,
-        priority
-      });
+      try {
+        const ticket = await TicketService.createTicket({
+          title,
+          customerName: params.customerName,
+          platform: params.platform,
+          type: params.analysis.detected_entities?.issue_type || "General",
+          body: params.messageContent,
+          messageId: params.messageId,
+          conversationId: params.conversationId,
+          intentType: ticketType,
+          context: params.context,
+          confidenceScore: params.analysis.confidence,
+          escalationReason: params.analysis.escalation_reason || undefined,
+          priority
+        });
 
-      console.log('Automated ticket created successfully:', ticket);
-      return ticket;
+        if (!ticket) {
+          const error = new Error('Ticket creation failed - no ticket returned from service');
+          console.error(error);
+          toast({
+            variant: "destructive",
+            title: "Ticket Creation Error",
+            description: "Failed to create ticket after criteria was met. Please check the logs.",
+          });
+          throw error;
+        }
+
+        console.log('Automated ticket created successfully:', ticket);
+        return ticket;
+      } catch (ticketError) {
+        console.error('Error in ticket creation:', ticketError);
+        toast({
+          variant: "destructive",
+          title: "Ticket Creation Error",
+          description: ticketError instanceof Error ? ticketError.message : "An unknown error occurred while creating the ticket",
+        });
+        throw ticketError;
+      }
     } catch (error) {
       console.error('Error in automated ticket generation:', error);
+      toast({
+        variant: "destructive",
+        title: "Automated Ticket Generation Error",
+        description: error instanceof Error ? error.message : "An unknown error occurred in ticket generation",
+      });
       throw error;
     }
   }
