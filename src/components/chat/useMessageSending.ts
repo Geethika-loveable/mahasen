@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { WhatsAppMessage } from "@/types/chat";
 import { useToast } from "@/hooks/use-toast";
 import { IntentDetectionService } from "@/services/intent/intentDetectionService";
-import { TicketService } from "@/services/ticketService";
 import { useIntentDetection } from "@/hooks/useIntentDetection";
 import type { TicketStatus } from "@/services/intent/types";
 
@@ -16,6 +15,62 @@ export const useMessageSending = (
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
   const { analyzeMessage } = useIntentDetection();
+
+  const createTicket = async (
+    messageId: string,
+    conversation: any,
+    analysis: any,
+    messageContent: string,
+    context: string
+  ) => {
+    try {
+      console.log('Creating ticket with data:', {
+        messageId,
+        conversation,
+        analysis,
+        messageContent,
+        context
+      });
+
+      const ticketData = {
+        title: analysis.intent === 'HUMAN_AGENT_REQUEST' 
+          ? 'Human Agent Request' 
+          : `${analysis.detected_entities?.issue_type || 'Support'} Request`,
+        customer_name: conversation.contact_name,
+        platform: conversation.platform,
+        type: analysis.detected_entities?.issue_type || "General",
+        body: messageContent,
+        message_id: messageId,
+        conversation_id: conversation.id,
+        intent_type: analysis.intent,
+        context: context,
+        confidence_score: analysis.confidence,
+        escalation_reason: analysis.escalation_reason,
+        priority: analysis.detected_entities?.urgency_level === 'high' ? 'HIGH' : 
+                 analysis.detected_entities?.urgency_level === 'medium' ? 'MEDIUM' : 'LOW',
+        status: 'New' as TicketStatus
+      };
+
+      console.log('Prepared ticket data:', ticketData);
+
+      const { data: ticket, error: ticketError } = await supabase
+        .from('tickets')
+        .insert(ticketData)
+        .select()
+        .single();
+
+      if (ticketError) {
+        console.error('Error creating ticket:', ticketError);
+        throw ticketError;
+      }
+
+      console.log('Ticket created successfully:', ticket);
+      return ticket;
+    } catch (error) {
+      console.error('Failed to create ticket:', error);
+      throw error;
+    }
+  };
 
   const sendMessage = async (newMessage: string) => {
     if (!newMessage.trim() || !id || !contactNumber) return;
@@ -84,7 +139,7 @@ export const useMessageSending = (
       console.log('Ticket info:', ticketInfo);
 
       // Create ticket if needed
-      if (messageData && conversation && ticketInfo) {
+      if (messageData && conversation && analysis) {
         const shouldCreateTicket = 
           analysis.intent === 'HUMAN_AGENT_REQUEST' ||
           (analysis.intent === 'SUPPORT_REQUEST' && analysis.detected_entities.urgency_level === 'high') ||
@@ -94,39 +149,15 @@ export const useMessageSending = (
 
         if (shouldCreateTicket) {
           try {
-            console.log('Attempting to create ticket...');
-            const ticketStatus: TicketStatus = 'New';
-            const ticketData = {
-              title: ticketInfo.title || "Human Agent Request",
-              customer_name: conversation.contact_name,
-              platform: conversation.platform,
-              type: analysis.detected_entities.issue_type || "General",
-              body: newMessage,
-              message_id: messageData.id,
-              conversation_id: id,
-              intent_type: analysis.intent,
-              context: previousMessages.join('\n'),
-              confidence_score: analysis.confidence,
-              escalation_reason: analysis.escalation_reason || "Customer requested human agent",
-              priority: analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 
-                       analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW',
-              status: ticketStatus
-            };
+            const ticket = await createTicket(
+              messageData.id,
+              conversation,
+              analysis,
+              newMessage,
+              previousMessages.join('\n')
+            );
 
-            console.log('Ticket data prepared:', ticketData);
-
-            const { data: ticket, error: ticketError } = await supabase
-              .from('tickets')
-              .insert(ticketData)
-              .select()
-              .single();
-
-            if (ticketError) {
-              console.error('Error creating ticket:', ticketError);
-              throw ticketError;
-            }
-
-            console.log('Ticket created successfully:', ticket);
+            console.log('Ticket created:', ticket);
 
             toast({
               title: "Ticket Created",
