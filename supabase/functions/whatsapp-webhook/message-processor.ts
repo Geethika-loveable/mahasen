@@ -3,7 +3,7 @@ import { generateAIResponse } from './ollama.ts';
 import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 import { getAISettings } from './ai-settings.ts';
-import { AutomatedTicketService } from '../../src/services/automatedTicketService.ts';
+import { AutomatedTicketService } from './automatedTicketService.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

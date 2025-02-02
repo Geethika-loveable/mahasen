@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Platform, Ticket, TicketPriority, TicketStatus } from "@/types/ticket";
+import { Platform, Ticket, TicketPriority, TicketStatus, TicketType } from "@/types/ticket";
 
 interface CreateTicketParams {
   title: string;
@@ -9,7 +9,7 @@ interface CreateTicketParams {
   body: string;
   messageId?: string;
   conversationId?: string;
-  intentType?: string;
+  intentType?: TicketType;
   context?: string;
   confidenceScore?: number;
   escalationReason?: string;
@@ -43,7 +43,7 @@ export class TicketService {
         body: params.body,
         message_id: params.messageId,
         conversation_id: params.conversationId,
-        intent_type: params.intentType,
+        intent_type: params.intentType || 'SUPPORT',
         context: params.context,
         confidence_score: params.confidenceScore,
         escalation_reason: params.escalationReason,
