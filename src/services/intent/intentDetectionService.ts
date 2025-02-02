@@ -141,7 +141,15 @@ export class IntentDetectionService {
       analysis.detected_entities.urgency_level === 'high' ? 'HIGH' :
       analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW';
 
+    // Generate an appropriate title based on the intent and issue type
+    const title = analysis.intent === 'HUMAN_AGENT_REQUEST' 
+      ? 'Human Agent Request'
+      : analysis.detected_entities.issue_type
+        ? `${analysis.detected_entities.issue_type.charAt(0).toUpperCase() + analysis.detected_entities.issue_type.slice(1)} Support Request`
+        : 'Support Request';
+
     return {
+      title,
       create_ticket: true,
       ticket_type: ticketType,
       priority,
