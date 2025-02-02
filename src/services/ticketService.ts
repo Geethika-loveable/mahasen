@@ -17,6 +17,20 @@ interface CreateTicketParams {
   priority?: TicketPriority;
 }
 
+interface UpdateTicketStatusParams {
+  ticketId: number;
+  previousStatus: TicketStatus;
+  newStatus: TicketStatus;
+  changedBy: string;
+}
+
+interface UpdateTicketAssignmentParams {
+  ticketId: number;
+  previousAssignedTo?: string;
+  newAssignedTo: string;
+  changedBy: string;
+}
+
 export class TicketService {
   static async createTicket(params: CreateTicketParams): Promise<Ticket> {
     console.log('TicketService: Starting ticket creation with params:', params);
