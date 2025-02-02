@@ -1,5 +1,5 @@
 import { IntentAnalysis } from "@/types/intent";
-import { Platform, TicketPriority } from "@/types/ticket";
+import { Platform, TicketPriority, TicketType } from "@/types/ticket";
 import { TicketService } from "./ticketService";
 
 interface AutomatedTicketParams {
@@ -26,6 +26,7 @@ export class AutomatedTicketService {
 
       const priority = this.determinePriority(params.analysis);
       const title = this.generateTicketTitle(params.analysis);
+      const ticketType = this.mapIntentToTicketType(params.analysis.intent);
 
       const ticket = await TicketService.createTicket({
         title,
@@ -35,7 +36,7 @@ export class AutomatedTicketService {
         body: params.messageContent,
         messageId: params.messageId,
         conversationId: params.conversationId,
-        intentType: params.analysis.intent,
+        intentType: ticketType,
         context: params.context,
         confidenceScore: params.analysis.confidence,
         escalationReason: params.analysis.escalation_reason || undefined,
@@ -47,6 +48,19 @@ export class AutomatedTicketService {
     } catch (error) {
       console.error('Error in automated ticket generation:', error);
       throw error;
+    }
+  }
+
+  private static mapIntentToTicketType(intent: string): TicketType {
+    switch (intent) {
+      case 'SUPPORT_REQUEST':
+        return 'SUPPORT';
+      case 'HUMAN_AGENT_REQUEST':
+        return 'REQUEST';
+      case 'ORDER_PLACEMENT':
+        return 'ORDER';
+      default:
+        return 'SUPPORT';
     }
   }
 
