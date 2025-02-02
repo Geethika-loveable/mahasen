@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { IntentDetectionService } from "@/services/intent/intentDetectionService";
 import { TicketService } from "@/services/ticketService";
 import { useIntentDetection } from "@/hooks/useIntentDetection";
+import type { TicketStatus } from "@/services/intent/types";
 
 export const useMessageSending = (
   id: string | undefined,
@@ -94,6 +95,7 @@ export const useMessageSending = (
         if (shouldCreateTicket) {
           try {
             console.log('Attempting to create ticket...');
+            const ticketStatus: TicketStatus = 'New';
             const ticketData = {
               title: ticketInfo.title || "Human Agent Request",
               customer_name: conversation.contact_name,
@@ -108,7 +110,7 @@ export const useMessageSending = (
               escalation_reason: analysis.escalation_reason || "Customer requested human agent",
               priority: analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 
                        analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW',
-              status: 'New'
+              status: ticketStatus
             };
 
             console.log('Ticket data prepared:', ticketData);

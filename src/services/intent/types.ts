@@ -2,6 +2,7 @@ export type IntentType = 'SUPPORT_REQUEST' | 'HUMAN_AGENT_REQUEST' | 'ORDER_PLAC
 export type UrgencyLevel = 'low' | 'medium' | 'high';
 export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 export type TicketType = 'SUPPORT' | 'REQUEST' | 'ORDER';
+export type TicketStatus = 'New' | 'In Progress' | 'Escalated' | 'Completed';
 
 export interface DetectedEntities {
   product_mentions: string[];
@@ -18,6 +19,7 @@ export interface IntentAnalysis {
 }
 
 export interface TicketCreationInfo {
+  title: string;
   create_ticket: boolean;
   ticket_type: TicketType;
   priority: TicketPriority;
