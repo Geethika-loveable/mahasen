@@ -1,4 +1,4 @@
-import { formatAIResponse, isValidAIResponse } from '../../../src/utils/aiResponseFormatter';
+import { formatAIResponse, isValidAIResponse } from './utils/aiResponseFormatter.ts';
 
 export async function generateAIResponse(message: string, context: string, aiSettings: any): Promise<string> {
   try {
