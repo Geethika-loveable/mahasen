@@ -61,7 +61,7 @@ Admin Settings:
 Tone: ${aiSettings.tone}
 ${aiSettings.behaviour || ''}
 
-You MUST respond in the following JSON format:
+You MUST respond in the following JSON format without any markdown backticks or prefixes:
 {
   "intent": "HUMAN_AGENT_REQUEST" | "SUPPORT_REQUEST" | "ORDER_PLACEMENT" | "GENERAL_QUERY",
   "confidence": 0.0-1.0,
@@ -76,6 +76,8 @@ You MUST respond in the following JSON format:
 }`;
 
   try {
+    console.log('Sending request to Groq with context:', { message, context, aiSettings });
+    
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -105,6 +107,7 @@ You MUST respond in the following JSON format:
 
     const data = await response.json();
     const responseText = data.choices[0].message.content.trim();
+    console.log('Raw LLM response:', responseText);
     
     // Format and validate the response
     const parsedResponse = formatAIResponse(responseText);

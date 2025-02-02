@@ -5,16 +5,24 @@
  */
 export const formatAIResponse = (response: string) => {
   try {
+    console.log('Raw AI response:', response);
+
     // Remove content between <think> tags including the tags themselves
-    const cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    let cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     
-    // Remove any "json" prefix if it exists
-    const jsonString = cleanedResponse.replace(/^json\s*/, '').trim();
+    // Remove any "json" prefix and backticks if they exist
+    cleanedResponse = cleanedResponse
+      .replace(/^```json\s*/g, '') // Remove ```json prefix
+      .replace(/^json\s*/g, '')    // Remove json prefix
+      .replace(/```$/g, '')        // Remove ending backticks
+      .trim();
+    
+    console.log('Cleaned response before parsing:', cleanedResponse);
     
     // Parse the remaining content as JSON
-    const parsedResponse = JSON.parse(jsonString);
+    const parsedResponse = JSON.parse(cleanedResponse);
     
-    console.log('Parsed AI response:', parsedResponse);
+    console.log('Successfully parsed AI response:', parsedResponse);
     return parsedResponse;
   } catch (error) {
     console.error('Error parsing AI response:', error);
@@ -27,14 +35,18 @@ export const formatAIResponse = (response: string) => {
  * Type guard to check if the parsed response has the expected structure
  */
 export const isValidAIResponse = (response: any): boolean => {
-  return (
-    response &&
+  const isValid = response &&
     typeof response === 'object' &&
     typeof response.intent === 'string' &&
     typeof response.confidence === 'number' &&
     typeof response.requires_escalation === 'boolean' &&
     typeof response.response === 'string' &&
     typeof response.detected_entities === 'object' &&
-    typeof response.detected_entities.urgency_level === 'string'
-  );
+    typeof response.detected_entities.urgency_level === 'string';
+
+  if (!isValid) {
+    console.error('Invalid AI response structure:', response);
+  }
+
+  return isValid;
 };
