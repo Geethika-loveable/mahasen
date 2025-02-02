@@ -45,21 +45,6 @@ async function createTicket(params: {
   try {
     console.log('Starting ticket creation with params:', params);
 
-    // Validate required fields
-    if (!messageId || !conversationId || !analysis || !customerName || !platform || !messageContent) {
-      const missingFields = [];
-      if (!messageId) missingFields.push('messageId');
-      if (!conversationId) missingFields.push('conversationId');
-      if (!analysis) missingFields.push('analysis');
-      if (!customerName) missingFields.push('customerName');
-      if (!platform) missingFields.push('platform');
-      if (!messageContent) missingFields.push('messageContent');
-      
-      const error = `Missing required fields for ticket creation: ${missingFields.join(', ')}`;
-      console.error(error);
-      throw new Error(error);
-    }
-
     const ticketData = {
       title: analysis.intent === 'HUMAN_AGENT_REQUEST' 
         ? 'Human Agent Request' 
@@ -79,7 +64,7 @@ async function createTicket(params: {
       status: 'New'
     };
 
-    console.log('Prepared ticket data:', ticketData);
+    console.log('Attempting to insert ticket with data:', ticketData);
 
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
@@ -160,6 +145,7 @@ export async function processWhatsAppMessage(
 
       if (shouldCreateTicket) {
         try {
+          console.log('Creating ticket for message:', messageId);
           const ticket = await createTicket({
             messageId,
             conversationId,
@@ -172,7 +158,7 @@ export async function processWhatsAppMessage(
           console.log('Ticket created successfully:', ticket);
         } catch (ticketError) {
           console.error('Failed to create ticket:', ticketError);
-          throw ticketError; // Propagate error for proper handling
+          throw ticketError;
         }
       }
     }
