@@ -65,6 +65,21 @@ export const useMessageSending = (
       }
 
       console.log('Ticket created successfully:', ticket);
+
+      // Create ticket history entry
+      const { error: historyError } = await supabase
+        .from('ticket_history')
+        .insert({
+          ticket_id: ticket.id,
+          action: 'Ticket Created',
+          new_status: 'New',
+          changed_by: 'System'
+        });
+
+      if (historyError) {
+        console.error('Error creating ticket history:', historyError);
+      }
+
       return ticket;
     } catch (error) {
       console.error('Failed to create ticket:', error);
