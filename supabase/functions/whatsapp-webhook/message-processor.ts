@@ -31,28 +31,33 @@ async function validateConversation(userId: string): Promise<string> {
   return conversation.id;
 }
 
-async function createTicket(
-  messageId: string,
-  conversationId: string,
-  analysis: any,
-  customerName: string,
-  platform: 'whatsapp' | 'facebook' | 'instagram',
-  messageContent: string,
-  context: string
-) {
+async function createTicket(params: {
+  messageId: string;
+  conversationId: string;
+  analysis: any;
+  customerName: string;
+  platform: 'whatsapp' | 'facebook' | 'instagram';
+  messageContent: string;
+  context: string;
+}) {
+  const { messageId, conversationId, analysis, customerName, platform, messageContent, context } = params;
+  
   try {
-    console.log('Creating ticket with data:', {
-      messageId,
-      conversationId,
-      analysis,
-      customerName,
-      platform,
-      messageContent
-    });
+    console.log('Starting ticket creation with params:', params);
 
     // Validate required fields
     if (!messageId || !conversationId || !analysis || !customerName || !platform || !messageContent) {
-      throw new Error('Missing required fields for ticket creation');
+      const missingFields = [];
+      if (!messageId) missingFields.push('messageId');
+      if (!conversationId) missingFields.push('conversationId');
+      if (!analysis) missingFields.push('analysis');
+      if (!customerName) missingFields.push('customerName');
+      if (!platform) missingFields.push('platform');
+      if (!messageContent) missingFields.push('messageContent');
+      
+      const error = `Missing required fields for ticket creation: ${missingFields.join(', ')}`;
+      console.error(error);
+      throw new Error(error);
     }
 
     const ticketData = {
@@ -101,47 +106,44 @@ export async function processWhatsAppMessage(
   userId: string,
   userName: string
 ): Promise<void> {
+  console.log('Starting message processing:', {
+    messageId,
+    userMessage,
+    userId,
+    userName
+  });
+
   try {
-    console.log('Starting message processing:', {
-      messageId,
-      userMessage,
-      userId,
-      userName
-    });
+    // 1. Get conversation ID first
+    const conversationId = await validateConversation(userId);
+    console.log('Validated conversation ID:', conversationId);
 
-    // Get conversation ID first to ensure it exists
-    let conversationId: string;
-    try {
-      conversationId = await validateConversation(userId);
-    } catch (error) {
-      console.error('Failed to validate conversation:', error);
-      throw error;
-    }
-
-    // Fetch AI settings
+    // 2. Fetch AI settings
     const aiSettings = await getAISettings();
-    console.log('AI settings retrieved:', aiSettings);
+    console.log('Retrieved AI settings:', aiSettings);
 
-    // Get conversation history
+    // 3. Get conversation history
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
     console.log('Retrieved conversation history:', conversationHistory);
 
-    // Generate AI response
+    // 4. Generate AI response
     const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
-    console.log('AI Response:', aiResponse);
-    
-    // Extract response text and check ticket creation criteria
+    console.log('Generated AI response:', aiResponse);
+
+    // 5. Extract response text and check ticket creation criteria
     const responseText = typeof aiResponse === 'object' ? aiResponse.response || aiResponse.content : aiResponse;
     
-    // Send WhatsApp response
+    // 6. Send WhatsApp response
     const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
     const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
     await sendWhatsAppMessage(userId, responseText, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
+    console.log('Sent WhatsApp response');
 
-    // Store the conversation
+    // 7. Store the conversation
     await storeConversation(supabase, userId, userName, userMessage, responseText);
+    console.log('Stored conversation');
 
-    // Check if we need to create a ticket
+    // 8. Check if we need to create a ticket
     if (typeof aiResponse === 'object') {
       const shouldCreateTicket = 
         aiResponse.requires_escalation ||
@@ -158,20 +160,19 @@ export async function processWhatsAppMessage(
 
       if (shouldCreateTicket) {
         try {
-          const ticket = await createTicket(
+          const ticket = await createTicket({
             messageId,
             conversationId,
-            aiResponse,
-            userName,
-            'whatsapp',
-            userMessage,
-            conversationHistory
-          );
+            analysis: aiResponse,
+            customerName: userName,
+            platform: 'whatsapp',
+            messageContent: userMessage,
+            context: conversationHistory
+          });
           console.log('Ticket created successfully:', ticket);
         } catch (ticketError) {
           console.error('Failed to create ticket:', ticketError);
-          // Don't throw here to prevent message processing from failing
-          // but we should log it for monitoring
+          throw ticketError; // Propagate error for proper handling
         }
       }
     }
@@ -185,7 +186,6 @@ async function getRecentConversationHistory(userId: string, aiSettings: any): Pr
   try {
     console.log('Fetching conversation history for user:', userId);
     
-    // Get the conversation ID for this user
     const { data: conversation } = await supabase
       .from("conversations")
       .select("id")
@@ -197,7 +197,6 @@ async function getRecentConversationHistory(userId: string, aiSettings: any): Pr
       return '';
     }
 
-    // Fetch recent messages based on AI settings context length
     const { data: messages, error } = await supabase
       .from("messages")
       .select("content, sender_name, created_at")
@@ -215,7 +214,6 @@ async function getRecentConversationHistory(userId: string, aiSettings: any): Pr
       return '';
     }
 
-    // Format messages into a string
     const formattedHistory = messages
       .reverse()
       .map(msg => `${msg.sender_name}: ${msg.content}`)
