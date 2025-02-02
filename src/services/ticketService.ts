@@ -1,84 +1,158 @@
 import { supabase } from "@/integrations/supabase/client";
-import { IntentAnalysis } from "@/types/intent";
-import { TicketType, Platform, TicketStatus, TicketPriority } from "@/types/ticket";
+import { Platform, Ticket, TicketPriority, TicketStatus } from "@/types/ticket";
+
+interface CreateTicketParams {
+  title: string;
+  customerName: string;
+  platform: Platform;
+  type: string;
+  body: string;
+  messageId?: string;
+  conversationId?: string;
+  intentType?: string;
+  context?: string;
+  confidenceScore?: number;
+  escalationReason?: string;
+  priority?: TicketPriority;
+}
+
+interface UpdateTicketStatusParams {
+  ticketId: number;
+  newStatus: TicketStatus;
+  changedBy: string;
+  previousStatus: TicketStatus;
+}
+
+interface UpdateTicketAssignmentParams {
+  ticketId: number;
+  newAssignedTo: string;
+  changedBy: string;
+  previousAssignedTo?: string;
+}
 
 export class TicketService {
-  static async createTicket(
-    messageId: string,
-    conversationId: string,
-    analysis: IntentAnalysis,
-    customerName: string,
-    platform: Platform,
-    messageContent: string,
-    context: string
-  ) {
-    console.log('Creating ticket with analysis:', analysis);
-    
-    // Enhanced ticket creation logic with more detailed logging
-    const shouldCreateTicket = 
-      analysis.requires_escalation ||
-      analysis.intent === 'HUMAN_AGENT_REQUEST' ||
-      (analysis.intent === 'SUPPORT_REQUEST' && analysis.detected_entities.urgency_level === 'high');
-
-    if (!shouldCreateTicket) {
-      console.log('No ticket needed based on analysis');
-      return null;
-    }
-
-    // Determine ticket type and priority based on intent and urgency
-    let ticketType: TicketType = 'REQUEST';
-    let title: string = 'Human Agent Request';
-    let priority: TicketPriority = 'HIGH';
-    let escalationReason = analysis.escalation_reason || 'Customer explicitly requested human agent';
-
-    if (analysis.intent === 'HUMAN_AGENT_REQUEST') {
-      ticketType = 'REQUEST';
-      title = 'Human Agent Request';
-      priority = 'HIGH';
-    } else if (analysis.intent === 'ORDER_PLACEMENT') {
-      ticketType = 'ORDER';
-      title = 'New Order Request';
-      priority = analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 'MEDIUM';
-    } else {
-      ticketType = 'SUPPORT';
-      title = analysis.requires_escalation ? 'Complex Support Request' : 'Support Request';
-      priority = analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 
-                analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW';
-    }
-
-    const ticketData = {
-      title,
-      customer_name: customerName,
-      platform,
-      type: analysis.detected_entities.issue_type || 'General',
-      body: messageContent,
-      message_id: messageId,
-      conversation_id: conversationId,
-      intent_type: ticketType,
-      context,
-      confidence_score: analysis.confidence,
-      escalation_reason: escalationReason,
-      priority,
-      status: 'New' as TicketStatus
-    };
+  static async createTicket(params: CreateTicketParams): Promise<Ticket> {
+    console.log('Creating ticket with params:', params);
 
     try {
-      console.log('Attempting to create ticket with data:', ticketData);
-      const { data, error } = await supabase
+      const ticketData = {
+        title: params.title,
+        customer_name: params.customerName,
+        platform: params.platform,
+        type: params.type,
+        body: params.body,
+        message_id: params.messageId,
+        conversation_id: params.conversationId,
+        intent_type: params.intentType,
+        context: params.context,
+        confidence_score: params.confidenceScore,
+        escalation_reason: params.escalationReason,
+        priority: params.priority || 'LOW',
+        status: 'New' as TicketStatus
+      };
+
+      const { data: ticket, error: ticketError } = await supabase
         .from('tickets')
         .insert(ticketData)
         .select()
         .single();
 
-      if (error) {
-        console.error('Error creating ticket:', error);
-        throw error;
+      if (ticketError) {
+        console.error('Error creating ticket:', ticketError);
+        throw ticketError;
       }
-      
-      console.log('Created ticket:', data);
-      return data;
+
+      // Create ticket history entry
+      await this.createTicketHistory({
+        ticketId: ticket.id,
+        action: 'Ticket Created',
+        newStatus: 'New',
+        changedBy: 'System'
+      });
+
+      console.log('Ticket created successfully:', ticket);
+      return ticket;
     } catch (error) {
-      console.error('Error creating ticket:', error);
+      console.error('Failed to create ticket:', error);
+      throw error;
+    }
+  }
+
+  static async updateTicketStatus(params: UpdateTicketStatusParams): Promise<void> {
+    try {
+      const { error: updateError } = await supabase
+        .from('tickets')
+        .update({ 
+          status: params.newStatus,
+          last_updated_at: new Date().toISOString()
+        })
+        .eq('id', params.ticketId);
+
+      if (updateError) throw updateError;
+
+      await this.createTicketHistory({
+        ticketId: params.ticketId,
+        action: 'Status Update',
+        previousStatus: params.previousStatus,
+        newStatus: params.newStatus,
+        changedBy: params.changedBy
+      });
+    } catch (error) {
+      console.error('Error updating ticket status:', error);
+      throw error;
+    }
+  }
+
+  static async updateTicketAssignment(params: UpdateTicketAssignmentParams): Promise<void> {
+    try {
+      const { error: updateError } = await supabase
+        .from('tickets')
+        .update({ 
+          assigned_to: params.newAssignedTo,
+          last_updated_at: new Date().toISOString()
+        })
+        .eq('id', params.ticketId);
+
+      if (updateError) throw updateError;
+
+      await this.createTicketHistory({
+        ticketId: params.ticketId,
+        action: 'Assignment Update',
+        previousAssignedTo: params.previousAssignedTo,
+        newAssignedTo: params.newAssignedTo,
+        changedBy: params.changedBy
+      });
+    } catch (error) {
+      console.error('Error updating ticket assignment:', error);
+      throw error;
+    }
+  }
+
+  private static async createTicketHistory(params: {
+    ticketId: number;
+    action: string;
+    previousStatus?: TicketStatus;
+    newStatus?: TicketStatus;
+    previousAssignedTo?: string;
+    newAssignedTo?: string;
+    changedBy: string;
+  }): Promise<void> {
+    try {
+      const { error: historyError } = await supabase
+        .from('ticket_history')
+        .insert({
+          ticket_id: params.ticketId,
+          action: params.action,
+          previous_status: params.previousStatus,
+          new_status: params.newStatus,
+          previous_assigned_to: params.previousAssignedTo,
+          new_assigned_to: params.newAssignedTo,
+          changed_by: params.changedBy
+        });
+
+      if (historyError) throw historyError;
+    } catch (error) {
+      console.error('Error creating ticket history:', error);
       throw error;
     }
   }
