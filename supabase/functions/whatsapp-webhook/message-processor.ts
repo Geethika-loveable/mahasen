@@ -9,6 +9,54 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function createTicket(
+  messageId: string,
+  conversationId: string,
+  analysis: any,
+  customerName: string,
+  platform: 'whatsapp' | 'facebook' | 'instagram',
+  messageContent: string,
+  context: string
+) {
+  try {
+    const ticketData = {
+      title: 'Human Agent Request',
+      customer_name: customerName,
+      platform,
+      type: analysis.detected_entities.issue_type || 'General',
+      body: messageContent,
+      message_id: messageId,
+      conversation_id: conversationId,
+      intent_type: analysis.intent,
+      context,
+      confidence_score: analysis.confidence,
+      escalation_reason: analysis.escalation_reason,
+      priority: analysis.detected_entities.urgency_level === 'high' ? 'HIGH' : 
+               analysis.detected_entities.urgency_level === 'medium' ? 'MEDIUM' : 'LOW',
+      status: 'New'
+    };
+
+    console.log('Creating ticket with data:', ticketData);
+
+    const { data: ticket, error } = await supabase
+      .from('tickets')
+      .insert(ticketData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating ticket:', error);
+      throw error;
+    }
+
+    console.log('Ticket created successfully:', ticket);
+    return ticket;
+  } catch (error) {
+    console.error('Error in createTicket:', error);
+    throw error;
+  }
+}
+
 async function generateEmbedding(text: string): Promise<number[]> {
   console.log('Generating embedding for text:', text);
   try {
@@ -51,61 +99,6 @@ async function searchKnowledgeBase(query: string, embedding: number[]): Promise<
     return matches.map(match => match.content).join('\n\n');
   } catch (error) {
     console.error('Error in knowledge base search:', error);
-    return '';
-  }
-}
-
-export async function getRecentConversationHistory(userId: string, aiSettings: any): Promise<string> {
-  try {
-    const timeoutHours = aiSettings.conversation_timeout_hours || 1;
-    const contextLength = aiSettings.context_memory_length || 2;
-    
-    const timeoutAgo = new Date(Date.now() - (timeoutHours * 60 * 60 * 1000)).toISOString();
-    console.log(`Getting messages newer than: ${timeoutAgo} (${timeoutHours} hours ago)`);
-    console.log(`Using context memory length: ${contextLength}`);
-    
-    const { data: conversations, error: convError } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('contact_number', userId)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (convError || !conversations?.length) {
-      console.log('No recent conversation found');
-      return '';
-    }
-
-    const conversationId = conversations[0].id;
-    const pairsToFetch = contextLength * 2;
-
-    const { data: messages, error: msgError } = await supabase
-      .from('messages')
-      .select('content, sender_name, created_at')
-      .eq('conversation_id', conversationId)
-      .gt('created_at', timeoutAgo)
-      .order('created_at', { ascending: false })
-      .limit(pairsToFetch);
-
-    if (msgError) {
-      console.error('Error fetching messages:', msgError);
-      return '';
-    }
-
-    if (!messages?.length) {
-      console.log('No recent messages found within timeout period');
-      return '';
-    }
-
-    const orderedMessages = messages.reverse();
-    const history = orderedMessages
-      .map(msg => `${msg.sender_name}: ${msg.content}`)
-      .join('\n');
-
-    console.log('Retrieved conversation history:', history);
-    return history ? `\nRecent conversation history:\n${history}` : '';
-  } catch (error) {
-    console.error('Error fetching conversation history:', error);
     return '';
   }
 }
@@ -157,10 +150,28 @@ ${conversationHistory}
     // Send response back via WhatsApp
     const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
     const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
-    await sendWhatsAppMessage(userId, aiResponse, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
+    await sendWhatsAppMessage(userId, aiResponse.response, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
 
-    // Store the conversation
-    await storeConversation(supabase, userId, userName, userMessage, aiResponse);
+    // Store the conversation and get the conversation ID
+    const conversationId = await storeConversation(supabase, userId, userName, userMessage, aiResponse.response);
+
+    // Check if we need to create a ticket
+    if (
+      aiResponse.requires_escalation ||
+      aiResponse.intent === 'HUMAN_AGENT_REQUEST' ||
+      (aiResponse.intent === 'SUPPORT_REQUEST' && aiResponse.detected_entities.urgency_level === 'high')
+    ) {
+      console.log('Ticket creation criteria met:', aiResponse);
+      await createTicket(
+        messageId,
+        conversationId,
+        aiResponse,
+        userName,
+        'whatsapp',
+        userMessage,
+        fullContext
+      );
+    }
   } catch (error) {
     console.error('Error processing message:', error);
     throw error;
