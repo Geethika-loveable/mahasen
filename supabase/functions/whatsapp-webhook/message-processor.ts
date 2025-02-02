@@ -8,29 +8,6 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function validateConversation(userId: string): Promise<string> {
-  console.log('Validating conversation for user:', userId);
-  
-  const { data: conversation, error } = await supabase
-    .from("conversations")
-    .select("id")
-    .eq("contact_number", userId)
-    .single();
-
-  if (error) {
-    console.error('Error fetching conversation:', error);
-    throw new Error(`Failed to validate conversation: ${error.message}`);
-  }
-
-  if (!conversation) {
-    console.error('No conversation found for user:', userId);
-    throw new Error('No conversation found');
-  }
-
-  console.log('Validated conversation:', conversation);
-  return conversation.id;
-}
-
 async function createTicket(params: {
   messageId: string;
   conversationId: string;
@@ -64,7 +41,7 @@ async function createTicket(params: {
       status: 'New'
     };
 
-    console.log('Attempting to insert ticket with data:', ticketData);
+    console.log('Attempting to create ticket with data:', ticketData);
 
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
@@ -78,6 +55,21 @@ async function createTicket(params: {
     }
 
     console.log('Ticket created successfully:', ticket);
+
+    // Create ticket history entry
+    const { error: historyError } = await supabase
+      .from('ticket_history')
+      .insert({
+        ticket_id: ticket.id,
+        action: 'Ticket Created',
+        new_status: 'New',
+        changed_by: 'System'
+      });
+
+    if (historyError) {
+      console.error('Error creating ticket history:', historyError);
+    }
+
     return ticket;
   } catch (error) {
     console.error('Failed to create ticket:', error);
@@ -99,36 +91,45 @@ export async function processWhatsAppMessage(
   });
 
   try {
-    // 1. Get conversation ID first
-    const conversationId = await validateConversation(userId);
-    console.log('Validated conversation ID:', conversationId);
+    // Get conversation ID first
+    const { data: conversation } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("contact_number", userId)
+      .single();
 
-    // 2. Fetch AI settings
+    if (!conversation) {
+      throw new Error('No conversation found');
+    }
+
+    console.log('Found conversation:', conversation);
+
+    // Fetch AI settings
     const aiSettings = await getAISettings();
     console.log('Retrieved AI settings:', aiSettings);
 
-    // 3. Get conversation history
+    // Get conversation history
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
     console.log('Retrieved conversation history:', conversationHistory);
 
-    // 4. Generate AI response
+    // Generate AI response
     const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
     console.log('Generated AI response:', aiResponse);
 
-    // 5. Extract response text and check ticket creation criteria
+    // Extract response text and check ticket creation criteria
     const responseText = typeof aiResponse === 'object' ? aiResponse.response || aiResponse.content : aiResponse;
     
-    // 6. Send WhatsApp response
+    // Send WhatsApp response
     const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
     const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
     await sendWhatsAppMessage(userId, responseText, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
     console.log('Sent WhatsApp response');
 
-    // 7. Store the conversation
+    // Store the conversation
     await storeConversation(supabase, userId, userName, userMessage, responseText);
     console.log('Stored conversation');
 
-    // 8. Check if we need to create a ticket
+    // Check if we need to create a ticket
     if (typeof aiResponse === 'object') {
       const shouldCreateTicket = 
         aiResponse.requires_escalation ||
@@ -148,7 +149,7 @@ export async function processWhatsAppMessage(
           console.log('Creating ticket for message:', messageId);
           const ticket = await createTicket({
             messageId,
-            conversationId,
+            conversationId: conversation.id,
             analysis: aiResponse,
             customerName: userName,
             platform: 'whatsapp',
