@@ -1,16 +1,40 @@
 /**
- * Formats the AI response based on the model type and removes any thinking/system prompts
+ * Formats the AI response by removing thinking tags and extracting JSON
  * @param response The raw response from the AI model
- * @param modelName The name of the AI model used
- * @returns Formatted response string
+ * @returns Parsed JSON object or null if parsing fails
  */
-export const formatAIResponse = (response: string, modelName: string): string => {
-  // Handle Deepseek model specific formatting
-  if (modelName.includes('deepseek')) {
+export const formatAIResponse = (response: string) => {
+  try {
     // Remove content between <think> tags including the tags themselves
-    return response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    const cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    
+    // Remove any "json" prefix if it exists
+    const jsonString = cleanedResponse.replace(/^json\s*/, '').trim();
+    
+    // Parse the remaining content as JSON
+    const parsedResponse = JSON.parse(jsonString);
+    
+    console.log('Parsed AI response:', parsedResponse);
+    return parsedResponse;
+  } catch (error) {
+    console.error('Error parsing AI response:', error);
+    console.error('Raw response:', response);
+    return null;
   }
+};
 
-  // For other models, return the response as is
-  return response.trim();
+/**
+ * Type guard to check if the parsed response has the expected structure
+ */
+export const isValidAIResponse = (response: any): boolean => {
+  return (
+    response &&
+    typeof response === 'object' &&
+    typeof response.intent === 'string' &&
+    typeof response.confidence === 'number' &&
+    typeof response.requires_escalation === 'boolean' &&
+    typeof response.response === 'string' &&
+    typeof response.detected_entities === 'object' &&
+    typeof response.detected_entities.urgency_level === 'string'
+  );
 };

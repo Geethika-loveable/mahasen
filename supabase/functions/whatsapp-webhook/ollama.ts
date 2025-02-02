@@ -1,3 +1,5 @@
+import { formatAIResponse, isValidAIResponse } from '../../../src/utils/aiResponseFormatter';
+
 export async function generateAIResponse(message: string, context: string, aiSettings: any): Promise<string> {
   try {
     if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
@@ -71,24 +73,9 @@ You MUST respond in the following JSON format:
     "urgency_level": "high" | "medium" | "low"
   },
   "response": string
-}
-
-The response field should use the specified tone and include:
-1. Acknowledgment of the user's request
-2. Clear next steps or information
-3. Relevant knowledge base information if available
-4. Escalation status if applicable`;
+}`;
 
   try {
-    console.log('Sending enhanced prompt to Groq with full context:', {
-      message,
-      context: context.substring(0, 100) + '...',
-      aiSettings: {
-        tone: aiSettings.tone,
-        behaviour: aiSettings.behaviour?.substring(0, 100) + '...'
-      }
-    });
-
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -117,38 +104,30 @@ The response field should use the specified tone and include:
     }
 
     const data = await response.json();
-    let responseText = data.choices[0].message.content.trim();
+    const responseText = data.choices[0].message.content.trim();
     
-    try {
-      // Parse and validate the JSON response
-      const parsedResponse = JSON.parse(responseText);
-      console.log('Parsed LLM response:', parsedResponse);
-
-      // Validate response structure
-      if (!parsedResponse.intent || !parsedResponse.confidence || parsedResponse.requires_escalation === undefined) {
-        throw new Error('Invalid response structure');
-      }
-
-      // Store the analysis for ticket creation if needed
-      if (parsedResponse.requires_escalation || 
-          parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
-          (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-        console.log('Ticket creation criteria met:', parsedResponse);
-      }
-
-      // Return only the response part for the user
-      return parsedResponse.response;
-    } catch (parseError) {
-      console.error('Error parsing LLM response as JSON:', parseError);
-      return responseText;
+    // Format and validate the response
+    const parsedResponse = formatAIResponse(responseText);
+    
+    if (!parsedResponse || !isValidAIResponse(parsedResponse)) {
+      console.error('Invalid response structure:', parsedResponse);
+      return "I apologize, but I received an invalid response format. Please try again.";
     }
+
+    // Store the analysis for ticket creation if needed
+    if (parsedResponse.requires_escalation || 
+        parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
+        (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
+      console.log('Ticket creation criteria met:', parsedResponse);
+    }
+
+    return parsedResponse.response;
   } catch (error) {
     console.error('Error getting Groq response:', error);
     throw error;
   }
 }
 
-// Update Gemini response generation with similar enhanced prompt
 async function generateGeminiResponse(message: string, context: string, aiSettings: any): Promise<string> {
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
   if (!GEMINI_API_KEY) {
