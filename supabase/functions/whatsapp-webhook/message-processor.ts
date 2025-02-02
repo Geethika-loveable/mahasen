@@ -9,6 +9,54 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+async function getRecentConversationHistory(userId: string, aiSettings: any): Promise<string> {
+  try {
+    console.log('Fetching conversation history for user:', userId);
+    
+    // Get the conversation ID for this user
+    const { data: conversation } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('contact_number', userId)
+      .single();
+
+    if (!conversation) {
+      console.log('No existing conversation found for user');
+      return '';
+    }
+
+    // Fetch recent messages based on AI settings context length
+    const { data: messages, error } = await supabase
+      .from('messages')
+      .select('content, sender_name, created_at')
+      .eq('conversation_id', conversation.id)
+      .order('created_at', { ascending: false })
+      .limit(aiSettings.context_memory_length || 2);
+
+    if (error) {
+      console.error('Error fetching conversation history:', error);
+      return '';
+    }
+
+    if (!messages || messages.length === 0) {
+      console.log('No message history found');
+      return '';
+    }
+
+    // Format messages into a string
+    const formattedHistory = messages
+      .reverse()
+      .map(msg => `${msg.sender_name}: ${msg.content}`)
+      .join('\n');
+
+    console.log('Retrieved conversation history:', formattedHistory);
+    return formattedHistory;
+  } catch (error) {
+    console.error('Error in getRecentConversationHistory:', error);
+    return '';
+  }
+}
+
 async function createTicket(
   messageId: string,
   conversationId: string,
@@ -150,10 +198,10 @@ ${conversationHistory}
     // Send response back via WhatsApp
     const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
     const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
-    await sendWhatsAppMessage(userId, aiResponse.response, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
+    await sendWhatsAppMessage(userId, aiResponse, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
 
     // Store the conversation and get the conversation ID
-    const conversationId = await storeConversation(supabase, userId, userName, userMessage, aiResponse.response);
+    const conversationId = await storeConversation(supabase, userId, userName, userMessage, aiResponse);
 
     // Check if we need to create a ticket
     if (
