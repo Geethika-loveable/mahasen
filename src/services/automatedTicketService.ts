@@ -25,47 +25,45 @@ export class AutomatedTicketService {
         return null;
       }
 
-      console.log('Ticket creation criteria is met, proceeding with ticket creation');
+      console.log('Proceeding with ticket creation...');
 
       const priority = this.determinePriority(params.analysis);
       const title = this.generateTicketTitle(params.analysis);
-      const ticketType = this.mapIntentToTicketType(params.analysis.intent);
+      const ticketType = this.determineTicketType(params.analysis);
+
+      const ticketData = {
+        title,
+        customerName: params.customerName,
+        platform: params.platform,
+        type: params.analysis.detected_entities?.issue_type || "General",
+        body: params.messageContent,
+        messageId: params.messageId,
+        conversationId: params.conversationId,
+        intentType: ticketType,
+        context: params.context,
+        confidenceScore: params.analysis.confidence,
+        escalationReason: params.analysis.escalation_reason || undefined,
+        priority
+      };
+
+      console.log('Attempting to create ticket with data:', ticketData);
 
       try {
-        const ticket = await TicketService.createTicket({
-          title,
-          customerName: params.customerName,
-          platform: params.platform,
-          type: params.analysis.detected_entities?.issue_type || "General",
-          body: params.messageContent,
-          messageId: params.messageId,
-          conversationId: params.conversationId,
-          intentType: ticketType,
-          context: params.context,
-          confidenceScore: params.analysis.confidence,
-          escalationReason: params.analysis.escalation_reason || undefined,
-          priority
+        const ticket = await TicketService.createTicket(ticketData);
+        console.log('Ticket created successfully:', ticket);
+        
+        toast({
+          title: "Ticket Created",
+          description: `Ticket #${ticket.id} has been created for ${params.customerName}`,
         });
 
-        if (!ticket) {
-          const error = new Error('Ticket creation failed - no ticket returned from service');
-          console.error(error);
-          toast({
-            variant: "destructive",
-            title: "Ticket Creation Error",
-            description: "Failed to create ticket after criteria was met. Please check the logs.",
-          });
-          throw error;
-        }
-
-        console.log('Automated ticket created successfully:', ticket);
         return ticket;
       } catch (ticketError) {
-        console.error('Error in ticket creation:', ticketError);
+        console.error('Error in TicketService.createTicket:', ticketError);
         toast({
           variant: "destructive",
-          title: "Ticket Creation Error",
-          description: ticketError instanceof Error ? ticketError.message : "An unknown error occurred while creating the ticket",
+          title: "Failed to Create Ticket",
+          description: ticketError instanceof Error ? ticketError.message : "An unknown error occurred",
         });
         throw ticketError;
       }
@@ -74,32 +72,27 @@ export class AutomatedTicketService {
       toast({
         variant: "destructive",
         title: "Automated Ticket Generation Error",
-        description: error instanceof Error ? error.message : "An unknown error occurred in ticket generation",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
       });
       throw error;
     }
   }
 
-  private static mapIntentToTicketType(intent: string): TicketType {
-    switch (intent) {
-      case 'SUPPORT_REQUEST':
-        return 'SUPPORT';
-      case 'HUMAN_AGENT_REQUEST':
-        return 'REQUEST';
-      case 'ORDER_PLACEMENT':
-        return 'ORDER';
-      default:
-        return 'SUPPORT';
-    }
-  }
-
   private static evaluateTicketCreationCriteria(analysis: IntentAnalysis): boolean {
-    return (
+    const shouldCreate = (
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
       (analysis.intent === 'SUPPORT_REQUEST' && 
        analysis.detected_entities?.urgency_level === 'high')
     );
+    
+    console.log('Ticket creation criteria evaluation:', {
+      analysis,
+      shouldCreate,
+      reason: shouldCreate ? 'Criteria met' : 'Criteria not met'
+    });
+
+    return shouldCreate;
   }
 
   private static determinePriority(analysis: IntentAnalysis): TicketPriority {
@@ -113,6 +106,17 @@ export class AutomatedTicketService {
     }
     
     return 'LOW';
+  }
+
+  private static determineTicketType(analysis: IntentAnalysis): TicketType {
+    switch (analysis.intent) {
+      case 'ORDER_PLACEMENT':
+        return 'ORDER';
+      case 'HUMAN_AGENT_REQUEST':
+        return 'REQUEST';
+      default:
+        return 'SUPPORT';
+    }
   }
 
   private static generateTicketTitle(analysis: IntentAnalysis): string {

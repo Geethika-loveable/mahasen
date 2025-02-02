@@ -17,23 +17,9 @@ interface CreateTicketParams {
   priority?: TicketPriority;
 }
 
-interface UpdateTicketStatusParams {
-  ticketId: number;
-  newStatus: TicketStatus;
-  changedBy: string;
-  previousStatus: TicketStatus;
-}
-
-interface UpdateTicketAssignmentParams {
-  ticketId: number;
-  newAssignedTo: string;
-  changedBy: string;
-  previousAssignedTo?: string;
-}
-
 export class TicketService {
   static async createTicket(params: CreateTicketParams): Promise<Ticket> {
-    console.log('Creating ticket with params:', params);
+    console.log('TicketService: Starting ticket creation with params:', params);
 
     try {
       const ticketData = {
@@ -52,6 +38,8 @@ export class TicketService {
         status: 'New' as TicketStatus
       };
 
+      console.log('TicketService: Attempting database insertion with:', ticketData);
+
       const { data: ticket, error: ticketError } = await supabase
         .from('tickets')
         .insert(ticketData)
@@ -59,7 +47,7 @@ export class TicketService {
         .single();
 
       if (ticketError) {
-        console.error('Error creating ticket:', ticketError);
+        console.error('TicketService: Database insertion error:', ticketError);
         toast({
           variant: "destructive",
           title: "Ticket Creation Failed",
@@ -70,7 +58,7 @@ export class TicketService {
 
       if (!ticket) {
         const error = new Error('No ticket data returned after creation');
-        console.error(error);
+        console.error('TicketService:', error);
         toast({
           variant: "destructive",
           title: "Ticket Creation Failed",
@@ -78,6 +66,8 @@ export class TicketService {
         });
         throw error;
       }
+
+      console.log('TicketService: Successfully created ticket:', ticket);
 
       // Create ticket history entry
       await this.createTicketHistory({
@@ -87,10 +77,9 @@ export class TicketService {
         changedBy: 'System'
       });
 
-      console.log('Ticket created successfully:', ticket);
       return ticket as Ticket;
     } catch (error) {
-      console.error('Failed to create ticket:', error);
+      console.error('TicketService: Failed to create ticket:', error);
       throw error;
     }
   }
