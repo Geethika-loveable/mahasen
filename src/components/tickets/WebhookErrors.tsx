@@ -40,16 +40,14 @@ export const WebhookErrors = () => {
             description: error.message,
           });
 
-          // Update the notified status with proper Promise handling
-          void supabase
+          // Update the notified status and throw any errors that occur
+          supabase
             .from('webhook_errors')
             .update({ notified: true })
             .eq('id', error.id)
             .then(({ error: updateError }) => {
               if (updateError) {
-                console.error('Failed to update notification status:', updateError);
-              } else {
-                console.log('Updated notification status for error:', error.id);
+                throw updateError;
               }
             });
         }
