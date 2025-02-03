@@ -13,7 +13,7 @@ export async function generateAIResponse(message: string, context: string, aiSet
   }
 }
 
-async function generateGroqResponse(message: string, context: string, aiSettings: any): Promise<string> {
+async function generateGroqResponse(message: string, context: any, aiSettings: any): Promise<string> {
   const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
   if (!GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY is not set');
@@ -104,7 +104,6 @@ You MUST respond in the following JSON format without any markdown backticks or 
     const responseText = data.choices[0].message.content.trim();
     console.log('Raw LLM response:', responseText);
     
-    // Format and validate the response
     const parsedResponse = formatAIResponse(responseText);
     
     if (!parsedResponse || !isValidAIResponse(parsedResponse)) {
@@ -112,18 +111,29 @@ You MUST respond in the following JSON format without any markdown backticks or 
       return "I apologize, but I received an invalid response format. Please try again.";
     }
 
-    // Store the analysis for ticket creation if needed
     if (parsedResponse.requires_escalation || 
         parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
         (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
       console.log('Ticket creation criteria met:', parsedResponse);
-      console.log('Testing One')
+      console.log('Testing One');
+    }
+    console.log('Testing Two');
+
+    // Create ticket IMMEDIATELY after criteria check
+    if (parsedResponse.requires_escalation || 
+        parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
+        (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
       try {
+        // Make sure we have the customer name from context
+        if (!context.userName) {
+          throw new Error('Customer name is missing from context');
+        }
+
         const ticket = await AutomatedTicketService.generateTicket({
-          messageId: context.messageId, // Make sure context includes messageId
-          conversationId: context.conversationId, // Make sure context includes conversationId
+          messageId: context.messageId,
+          conversationId: context.conversationId,
           analysis: parsedResponse,
-          customerName: context.userName, // Make sure context includes userName
+          customerName: context.userName, // This is the key fix - ensuring customer_name is passed
           platform: 'whatsapp',
           messageContent: message,
           context: context
@@ -136,10 +146,9 @@ You MUST respond in the following JSON format without any markdown backticks or 
         }
       } catch (error) {
         console.error('Error creating ticket:', error);
-        throw error; // Re-throw to ensure errors are not silently caught
-      };
+        throw error;
+      }
     }
-    console.log('Testing Two');
 
     console.log('Testing Three');
     return parsedResponse.response;
