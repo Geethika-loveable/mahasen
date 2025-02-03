@@ -153,10 +153,7 @@ You MUST respond in the following JSON format without any markdown backticks or 
         } else {
           console.error('Failed to create ticket - no ticket returned');
         }
-      } catch (error) {
-        console.error('Error creating ticket:', error);
-        throw error;
-      }
+      } 
     }
 
     console.log('Testing Three');
