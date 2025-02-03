@@ -1,78 +1,45 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
+import { useState } from "react";
 import { TicketList } from "@/components/tickets/TicketList";
 import { TicketHeader } from "@/components/tickets/TicketHeader";
-import { Ticket, TicketType, TicketPriority } from "@/types/ticket";
+import { WebhookErrors } from "@/components/tickets/WebhookErrors";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Ticket } from "@/types/ticket";
 
 const Tickets = () => {
-  const navigate = useNavigate();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Ticket; direction: 'asc' | 'desc' }>({ 
-    key: 'id', 
-    direction: 'asc' 
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Ticket;
+    direction: 'asc' | 'desc';
+  }>({
+    key: 'created_at',
+    direction: 'desc'
   });
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("tickets")
-          .select("*")
-          .order('id', { ascending: true });
+  const { data: tickets, isLoading } = useQuery({
+    queryKey: ['tickets'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select('*')
+        .order(sortConfig.key, { ascending: sortConfig.direction === 'asc' });
 
-        if (error) throw error;
-        
-        // Transform the data to ensure all fields match their expected types
-        const transformedData = (data || []).map(ticket => ({
-          ...ticket,
-          intent_type: ticket.intent_type as TicketType | undefined,
-          priority: (ticket.priority || 'LOW') as TicketPriority,
-          assigned_to: ticket.assigned_to || undefined,
-          confidence_score: ticket.confidence_score || undefined,
-          context: ticket.context || undefined,
-          conversation_id: ticket.conversation_id || undefined,
-          escalation_reason: ticket.escalation_reason || undefined,
-          message_id: ticket.message_id || undefined,
-          last_updated_at: ticket.last_updated_at || undefined
-        }));
-
-        setTickets(transformedData);
-      } catch (error) {
-        console.error("Error fetching tickets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTickets();
-  }, []);
+      if (error) throw error;
+      return data as Ticket[];
+    }
+  });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
-      <div className="max-w-7xl mx-auto">
-        <TicketHeader 
-          onBackClick={() => navigate("/dashboard")} 
-          onAddClick={() => setDialogOpen(true)}
+    <div className="container mx-auto py-8">
+      <WebhookErrors />
+      <TicketHeader />
+      <div className="mt-8">
+        <TicketList
+          tickets={tickets || []}
+          loading={isLoading}
+          sortConfig={sortConfig}
+          onSortChange={setSortConfig}
         />
-
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
-          <TicketList 
-            tickets={tickets}
-            loading={loading}
-            sortConfig={sortConfig}
-            onSortChange={(config) => setSortConfig(config)}
-          />
-        </div>
       </div>
-      <AddTicketDialog 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen}
-        onTicketAdded={(newTicket) => setTickets((prev) => [newTicket, ...prev])}
-      />
     </div>
   );
 };
