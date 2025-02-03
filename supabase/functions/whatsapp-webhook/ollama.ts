@@ -1,4 +1,5 @@
 import { formatAIResponse, isValidAIResponse } from './utils/aiResponseFormatter.ts';
+import { AutomatedTicketService } from './automatedTicketService.ts';
 
 export async function generateAIResponse(message: string, context: string, aiSettings: any): Promise<string> {
   try {
@@ -121,9 +122,12 @@ You MUST respond in the following JSON format without any markdown backticks or 
     if (parsedResponse.requires_escalation || 
         parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
         (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-      console.log('Ticket creation criteria met:', parsedResponse);
+      console.log('Ticket creation criteria met:', parsedResponse)
+      console.log('Testing One');
     }
+    console.log('Testing Two')
 
+    console.log('Testing Three')
     return parsedResponse.response;
   } catch (error) {
     console.error('Error getting Groq response:', error);
