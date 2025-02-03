@@ -83,7 +83,14 @@ export const useMessageSending = (
               description: "A support ticket has been created for this request.",
             });
           }
-        } 
+        } catch (ticketError) {
+          console.error('Failed to create ticket:', ticketError);
+          toast({
+            variant: "destructive",
+            title: "Error Creating Ticket",
+            description: "Failed to create support ticket. Please try again.",
+          });
+        }
       }
 
       // Send WhatsApp message

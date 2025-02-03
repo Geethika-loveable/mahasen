@@ -72,7 +72,14 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
       onTicketAdded(data);
       form.reset();
       onOpenChange(false);
-    }  finally {
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to create ticket. Please try again.",
+      });
+    } finally {
       setIsSubmitting(false);
     }
   };

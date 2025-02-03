@@ -328,33 +328,6 @@ export type Database = {
           },
         ]
       }
-      webhook_errors: {
-        Row: {
-          created_at: string
-          details: Json | null
-          error_type: string
-          id: string
-          message: string
-          notified: boolean | null
-        }
-        Insert: {
-          created_at?: string
-          details?: Json | null
-          error_type: string
-          id?: string
-          message: string
-          notified?: boolean | null
-        }
-        Update: {
-          created_at?: string
-          details?: Json | null
-          error_type?: string
-          id?: string
-          message?: string
-          notified?: boolean | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never

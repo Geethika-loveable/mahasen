@@ -171,6 +171,9 @@ export class TicketService {
         });
 
       if (historyError) throw historyError;
-    } 
+    } catch (error) {
+      console.error('Error creating ticket history:', error);
+      throw error;
+    }
   }
 }
