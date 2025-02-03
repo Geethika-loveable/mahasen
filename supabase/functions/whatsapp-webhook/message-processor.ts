@@ -55,11 +55,11 @@ export async function processWhatsAppMessage(
     // Store the conversation
     await storeConversation(supabase, userId, userName, userMessage, responseText);
 
-    // Handle ticket creation if needed - FIXED: Immediate ticket creation after criteria check
+    // IMMEDIATE ticket creation if criteria met
     if (typeof aiResponse === 'object' && 'intent' in aiResponse) {
-      console.log('Checking ticket creation criteria for:', aiResponse);
+      console.log('Ticket creation criteria met:', aiResponse);
       
-      // Create ticket immediately if criteria is met
+      // Create ticket IMMEDIATELY after criteria check
       const ticket = await AutomatedTicketService.generateTicket({
         messageId,
         conversationId: conversation.id,
@@ -72,6 +72,8 @@ export async function processWhatsAppMessage(
       
       if (ticket) {
         console.log('Ticket created successfully:', ticket);
+      } else {
+        console.error('Failed to create ticket - no ticket returned');
       }
     }
   } catch (error) {
