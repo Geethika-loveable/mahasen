@@ -24,11 +24,15 @@ export async function processWhatsAppMessage(
 
   try {
     // Get conversation ID first
-    const { data: conversation } = await supabase
+    const { data: conversation, error: conversationError } = await supabase
       .from("conversations")
       .select("id")
       .eq("contact_number", userId)
       .single();
+
+    if (conversationError) {
+      throw new Error(`Failed to fetch conversation: ${conversationError.message}`);
+    }
 
     if (!conversation) {
       throw new Error('No conversation found');
@@ -55,20 +59,57 @@ export async function processWhatsAppMessage(
     const aiResponse = await generateAIResponse(userMessage, context, aiSettings);
     console.log('Generated AI response:', aiResponse);
 
+    if (!aiResponse) {
+      throw new Error('Failed to generate AI response');
+    }
+
     // Extract response text
     const responseText = typeof aiResponse === 'object' ? aiResponse.response || aiResponse.content : aiResponse;
+
+    if (!responseText) {
+      throw new Error('Invalid AI response format');
+    }
 
     // Send WhatsApp response
     const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
     const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
-    await sendWhatsAppMessage(userId, responseText, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
+    
+    if (!WHATSAPP_ACCESS_TOKEN || !WHATSAPP_PHONE_ID) {
+      throw new Error('Missing WhatsApp configuration');
+    }
+
+    const whatsappResponse = await sendWhatsAppMessage(userId, responseText, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
+    
+    if (!whatsappResponse) {
+      throw new Error('Failed to send WhatsApp message');
+    }
 
     // Store the conversation
     await storeConversation(supabase, userId, userName, userMessage, responseText);
 
   } catch (error) {
     console.error('Error in message processing:', error);
-    throw error;
+    
+    // Store the error in webhook_errors table
+    const { error: insertError } = await supabase
+      .from('webhook_errors')
+      .insert({
+        error_type: 'WHATSAPP_PROCESSING_ERROR',
+        message: error.message,
+        details: {
+          messageId,
+          userId,
+          userName,
+          timestamp: new Date().toISOString(),
+          stack: error.stack
+        }
+      });
+
+    if (insertError) {
+      console.error('Failed to log webhook error:', insertError);
+    }
+
+    throw error; // Re-throw the error to trigger Lovable's error handling
   }
 }
 
