@@ -2,19 +2,14 @@ import { formatAIResponse, isValidAIResponse } from './utils/aiResponseFormatter
 import { AutomatedTicketService } from './automatedTicketService.ts';
 
 export async function generateAIResponse(message: string, context: string, aiSettings: any): Promise<string> {
-  try {
-    if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
-      return await generateGroqResponse(message, context, aiSettings);
-    } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
-      return await generateGeminiResponse(message, context, aiSettings);
-    } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
-      return await generateGroqResponse(message, context, aiSettings);
-    } else {
-      throw new Error('Invalid model specified');
-    }
-  } catch (error) {
-    console.error('Error generating AI response:', error);
-    return "I apologize, but I'm having trouble processing your request right now. Please try again later.";
+  if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
+    return await generateGroqResponse(message, context, aiSettings);
+  } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
+    return await generateGeminiResponse(message, context, aiSettings);
+  } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
+    return await generateGroqResponse(message, context, aiSettings);
+  } else {
+    throw new Error('Invalid model specified');
   }
 }
 
@@ -24,7 +19,6 @@ async function generateGroqResponse(message: string, context: string, aiSettings
     throw new Error('GROQ_API_KEY is not set');
   }
 
-  // Enhanced system prompt combining all contexts
   const systemPrompt = `
 You are an AI assistant responsible for analyzing user intents and determining when human intervention is needed.
 
@@ -122,12 +116,38 @@ You MUST respond in the following JSON format without any markdown backticks or 
     if (parsedResponse.requires_escalation || 
         parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
         (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-      console.log('Ticket creation criteria met:', parsedResponse)
+      console.log('Ticket creation criteria met:', parsedResponse);
       console.log('Testing One');
     }
-    console.log('Testing Two')
+    console.log('Testing Two');
 
-    console.log('Testing Three')
+    // Create ticket IMMEDIATELY after criteria check
+    if (parsedResponse.requires_escalation || 
+        parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
+        (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
+      try {
+        const ticket = await AutomatedTicketService.generateTicket({
+          messageId: context.messageId, // Make sure context includes messageId
+          conversationId: context.conversationId, // Make sure context includes conversationId
+          analysis: parsedResponse,
+          customerName: context.userName, // Make sure context includes userName
+          platform: 'whatsapp',
+          messageContent: message,
+          context: context
+        });
+        
+        if (ticket) {
+          console.log('Ticket created successfully:', ticket);
+        } else {
+          console.error('Failed to create ticket - no ticket returned');
+        }
+      } catch (error) {
+        console.error('Error creating ticket:', error);
+        throw error; // Re-throw to ensure errors are not silently caught
+      }
+    }
+
+    console.log('Testing Three');
     return parsedResponse.response;
   } catch (error) {
     console.error('Error getting Groq response:', error);
