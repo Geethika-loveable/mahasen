@@ -117,14 +117,7 @@ You MUST respond in the following JSON format without any markdown backticks or 
         parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
         (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
       console.log('Ticket creation criteria met:', parsedResponse);
-      console.log('Testing One');
-    }
-    console.log('Testing Two');
-
-    // Create ticket IMMEDIATELY after criteria check
-    if (parsedResponse.requires_escalation || 
-        parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
-        (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
+      console.log('Testing One')
       try {
         const ticket = await AutomatedTicketService.generateTicket({
           messageId: context.messageId, // Make sure context includes messageId
@@ -144,8 +137,9 @@ You MUST respond in the following JSON format without any markdown backticks or 
       } catch (error) {
         console.error('Error creating ticket:', error);
         throw error; // Re-throw to ensure errors are not silently caught
-      }
+      };
     }
+    console.log('Testing Two');
 
     console.log('Testing Three');
     return parsedResponse.response;
