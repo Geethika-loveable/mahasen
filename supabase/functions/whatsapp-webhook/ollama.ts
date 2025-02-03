@@ -1,7 +1,7 @@
 import { formatAIResponse, isValidAIResponse } from './utils/aiResponseFormatter.ts';
 import { AutomatedTicketService } from './automatedTicketService.ts';
 
-export async function generateAIResponse(message: string, context: string, aiSettings: any): Promise<string> {
+export async function generateAIResponse(message: string, context: any, aiSettings: any): Promise<string> {
   if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
     return await generateGroqResponse(message, context, aiSettings);
   } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
@@ -17,6 +17,12 @@ async function generateGroqResponse(message: string, context: any, aiSettings: a
   const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
   if (!GROQ_API_KEY) {
     throw new Error('GROQ_API_KEY is not set');
+  }
+
+  // Validate required context fields
+  if (!context.userName || !context.messageId || !context.conversationId) {
+    console.error('Missing required context:', context);
+    throw new Error('Missing required context fields: userName, messageId, or conversationId');
   }
 
   const systemPrompt = `
@@ -50,7 +56,7 @@ Urgency Levels:
 - low: general inquiries, information requests
 
 Knowledge Base Context:
-${context}
+${context.knowledgeBase || ''}
 
 Admin Settings:
 Tone: ${aiSettings.tone}
@@ -124,19 +130,22 @@ You MUST respond in the following JSON format without any markdown backticks or 
         parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
         (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
       try {
-        // Make sure we have the customer name from context
-        if (!context.userName) {
-          throw new Error('Customer name is missing from context');
-        }
+        console.log('Creating ticket with context:', {
+          messageId: context.messageId,
+          conversationId: context.conversationId,
+          customerName: context.userName,
+          platform: 'whatsapp',
+          messageContent: message
+        });
 
         const ticket = await AutomatedTicketService.generateTicket({
           messageId: context.messageId,
           conversationId: context.conversationId,
           analysis: parsedResponse,
-          customerName: context.userName, // This is the key fix - ensuring customer_name is passed
+          customerName: context.userName,
           platform: 'whatsapp',
           messageContent: message,
-          context: context
+          context: context.knowledgeBase || ''
         });
         
         if (ticket) {
@@ -158,7 +167,7 @@ You MUST respond in the following JSON format without any markdown backticks or 
   }
 }
 
-async function generateGeminiResponse(message: string, context: string, aiSettings: any): Promise<string> {
+async function generateGeminiResponse(message: string, context: any, aiSettings: any): Promise<string> {
   const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not set');
