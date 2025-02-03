@@ -30,6 +30,7 @@ export async function storeConversation(supabase: any, userId: string, userName:
       conversationId = conversation.id;
     }
 
+    // Create messages with our own UUIDs
     const { error: msgError } = await supabase.from('messages').insert([
       {
         conversation_id: conversationId,

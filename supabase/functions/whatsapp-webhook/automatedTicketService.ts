@@ -18,7 +18,7 @@ interface IntentAnalysis {
 }
 
 interface AutomatedTicketParams {
-  messageId: string;
+  messageId: string; // This will now be our UUID
   conversationId: string;
   analysis: IntentAnalysis;
   customerName: string;

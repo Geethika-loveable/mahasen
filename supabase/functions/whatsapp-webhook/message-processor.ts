@@ -9,13 +9,13 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function processWhatsAppMessage(
-  messageId: string,
+  whatsappMessageId: string,
   userMessage: string,
   userId: string,
   userName: string
 ): Promise<void> {
   console.log('Starting message processing:', {
-    messageId,
+    whatsappMessageId,
     userMessage,
     userId,
     userName
@@ -42,6 +42,25 @@ export async function processWhatsAppMessage(
 
     console.log('Found conversation:', conversation);
 
+    // Create a message record with our own UUID
+    const { data: messageData, error: messageError } = await supabase
+      .from("messages")
+      .insert({
+        conversation_id: conversation.id,
+        content: userMessage,
+        sender_name: userName,
+        sender_number: userId,
+        status: 'received',
+        whatsapp_message_id: whatsappMessageId // Store original WhatsApp ID
+      })
+      .select()
+      .single();
+
+    if (messageError) {
+      console.error('Error creating message:', messageError);
+      throw messageError;
+    }
+
     // Fetch AI settings and conversation history
     const aiSettings = await getAISettings();
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
@@ -49,7 +68,7 @@ export async function processWhatsAppMessage(
     // Create context object with all required fields
     const context = {
       userName,
-      messageId,
+      messageId: messageData.id, // Use our generated UUID
       conversationId: conversation.id,
       knowledgeBase: conversationHistory,
       userMessage,
@@ -82,7 +101,7 @@ export async function processWhatsAppMessage(
         error_type: 'WHATSAPP_WEBHOOK_ERROR',
         message: error instanceof Error ? error.message : 'Unknown error',
         details: {
-          messageId,
+          whatsappMessageId,
           userId,
           userName,
           timestamp: new Date().toISOString()
@@ -92,7 +111,7 @@ export async function processWhatsAppMessage(
       console.error('Error logging to webhook_errors:', logError);
     }
     
-    throw error; // Re-throw to trigger Lovable's error handling
+    throw error;
   }
 }
 
