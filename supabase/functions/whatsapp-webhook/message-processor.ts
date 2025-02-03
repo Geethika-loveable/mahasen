@@ -40,8 +40,19 @@ export async function processWhatsAppMessage(
     const aiSettings = await getAISettings();
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
 
+    // Create context object with all required fields
+    const context = {
+      userName,
+      messageId,
+      conversationId: conversation.id,
+      knowledgeBase: conversationHistory,
+      userMessage
+    };
+
+    console.log('Prepared context for AI response:', context);
+
     // Generate AI response
-    const aiResponse = await generateAIResponse(userMessage, conversationHistory, aiSettings);
+    const aiResponse = await generateAIResponse(userMessage, context, aiSettings);
     console.log('Generated AI response:', aiResponse);
 
     // Extract response text
@@ -55,27 +66,6 @@ export async function processWhatsAppMessage(
     // Store the conversation
     await storeConversation(supabase, userId, userName, userMessage, responseText);
 
-    // IMMEDIATE ticket creation if criteria met
-    if (typeof aiResponse === 'object' && 'intent' in aiResponse) {
-      console.log('Ticket creation criteria met:', aiResponse);
-      
-      // Create ticket IMMEDIATELY after criteria check
-      const ticket = await AutomatedTicketService.generateTicket({
-        messageId,
-        conversationId: conversation.id,
-        analysis: aiResponse,
-        customerName: userName,
-        platform: 'whatsapp',
-        messageContent: userMessage,
-        context: conversationHistory
-      });
-      
-      if (ticket) {
-        console.log('Ticket created successfully:', ticket);
-      } else {
-        console.error('Failed to create ticket - no ticket returned');
-      }
-    }
   } catch (error) {
     console.error('Error in message processing:', error);
     throw error;
