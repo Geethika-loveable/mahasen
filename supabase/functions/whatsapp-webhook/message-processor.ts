@@ -3,7 +3,6 @@ import { generateAIResponse } from './ollama.ts';
 import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 import { getAISettings } from './ai-settings.ts';
-import { AutomatedTicketService } from './automatedTicketService.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -24,14 +23,21 @@ export async function processWhatsAppMessage(
 
   try {
     // Get conversation ID first
-    const { data: conversation } = await supabase
+    const { data: conversation, error: convError } = await supabase
       .from("conversations")
       .select("id")
       .eq("contact_number", userId)
       .single();
 
+    if (convError) {
+      console.error('Error fetching conversation:', convError);
+      throw convError;
+    }
+
     if (!conversation) {
-      throw new Error('No conversation found');
+      const error = new Error('No conversation found');
+      console.error('Error:', error);
+      throw error;
     }
 
     console.log('Found conversation:', conversation);
@@ -46,7 +52,8 @@ export async function processWhatsAppMessage(
       messageId,
       conversationId: conversation.id,
       knowledgeBase: conversationHistory,
-      userMessage
+      userMessage,
+      platform: 'whatsapp' as const
     };
 
     console.log('Prepared context for AI response:', context);
@@ -68,7 +75,24 @@ export async function processWhatsAppMessage(
 
   } catch (error) {
     console.error('Error in message processing:', error);
-    throw error;
+    
+    // Log error to webhook_errors table
+    try {
+      await supabase.from('webhook_errors').insert({
+        error_type: 'WHATSAPP_WEBHOOK_ERROR',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        details: {
+          messageId,
+          userId,
+          userName,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (logError) {
+      console.error('Error logging to webhook_errors:', logError);
+    }
+    
+    throw error; // Re-throw to trigger Lovable's error handling
   }
 }
 

@@ -1,52 +1,41 @@
-/**
- * Formats the AI response by removing thinking tags and extracting JSON
- * @param response The raw response from the AI model
- * @returns Parsed JSON object or null if parsing fails
- */
-export const formatAIResponse = (response: string) => {
+export function formatAIResponse(responseText: string): any {
   try {
-    console.log('Raw AI response:', response);
-
-    // Remove content between <think> tags including the tags themselves
-    let cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    // Remove <think> tags and their content if present
+    const cleanedResponse = responseText.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     
-    // Remove any "json" prefix and backticks if they exist
-    cleanedResponse = cleanedResponse
-      .replace(/^```json\s*/g, '') // Remove ```json prefix
-      .replace(/^json\s*/g, '')    // Remove json prefix
-      .replace(/```$/g, '')        // Remove ending backticks
-      .trim();
-    
-    console.log('Cleaned response before parsing:', cleanedResponse);
-    
-    // Parse the remaining content as JSON
+    // Try to parse as JSON
     const parsedResponse = JSON.parse(cleanedResponse);
-    
-    console.log('Successfully parsed AI response:', parsedResponse);
     return parsedResponse;
   } catch (error) {
-    console.error('Error parsing AI response:', error);
-    console.error('Raw response:', response);
-    return null;
+    console.error('Error formatting AI response:', error);
+    console.log('Raw response:', responseText);
+    
+    // If parsing fails, return the raw text
+    return {
+      response: responseText,
+      intent: 'GENERAL_QUERY',
+      confidence: 0.5,
+      requires_escalation: false,
+      escalation_reason: null,
+      detected_entities: {
+        product_mentions: [],
+        issue_type: null,
+        urgency_level: 'low'
+      }
+    };
   }
-};
+}
 
-/**
- * Type guard to check if the parsed response has the expected structure
- */
-export const isValidAIResponse = (response: any): boolean => {
-  const isValid = response &&
-    typeof response === 'object' &&
+export function isValidAIResponse(response: any): boolean {
+  return (
+    response &&
     typeof response.intent === 'string' &&
     typeof response.confidence === 'number' &&
     typeof response.requires_escalation === 'boolean' &&
-    typeof response.response === 'string' &&
-    typeof response.detected_entities === 'object' &&
-    typeof response.detected_entities.urgency_level === 'string';
-
-  if (!isValid) {
-    console.error('Invalid AI response structure:', response);
-  }
-
-  return isValid;
-};
+    (response.escalation_reason === null || typeof response.escalation_reason === 'string') &&
+    response.detected_entities &&
+    Array.isArray(response.detected_entities.product_mentions) &&
+    (response.detected_entities.issue_type === null || typeof response.detected_entities.issue_type === 'string') &&
+    ['low', 'medium', 'high'].includes(response.detected_entities.urgency_level)
+  );
+}

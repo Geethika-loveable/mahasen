@@ -29,6 +29,8 @@ interface AutomatedTicketParams {
 
 export class AutomatedTicketService {
   static async generateTicket(params: AutomatedTicketParams) {
+    console.log('Starting ticket generation with params:', params);
+    
     const shouldCreateTicket = this.evaluateTicketCreationCriteria(params.analysis);
     console.log('Ticket creation criteria met:', shouldCreateTicket);
     
@@ -49,6 +51,8 @@ export class AutomatedTicketService {
         status: 'New'
       };
 
+      console.log('Attempting to create ticket with data:', ticketData);
+
       const { data: ticket, error } = await supabase
         .from('tickets')
         .insert(ticketData)
@@ -60,6 +64,7 @@ export class AutomatedTicketService {
         throw error;
       }
 
+      console.log('Successfully created ticket:', ticket);
       return ticket;
     }
     
