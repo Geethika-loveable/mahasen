@@ -3,10 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+interface WebhookError {
+  id: string;
+  error_type: string;
+  message: string;
+  details: any;
+  notified: boolean;
+  created_at: string;
+}
+
 export const WebhookErrors = () => {
   const { toast } = useToast();
 
-  const { data: errors } = useQuery({
+  const { data: errors } = useQuery<WebhookError[]>({
     queryKey: ['webhook-errors'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -30,6 +39,18 @@ export const WebhookErrors = () => {
             title: `WhatsApp Webhook Error: ${error.error_type}`,
             description: error.message,
           });
+
+          // Update the notified status
+          supabase
+            .from('webhook_errors')
+            .update({ notified: true })
+            .eq('id', error.id)
+            .then(() => {
+              console.log('Updated notification status for error:', error.id);
+            })
+            .catch((updateError) => {
+              console.error('Failed to update notification status:', updateError);
+            });
         }
       });
     }

@@ -28,10 +28,20 @@ const Tickets = () => {
     }
   });
 
+  const handleAddClick = () => {
+    // Handle add ticket click
+    console.log('Add ticket clicked');
+  };
+
+  const handleBackClick = () => {
+    // Handle back click
+    console.log('Back clicked');
+  };
+
   return (
     <div className="container mx-auto py-8">
       <WebhookErrors />
-      <TicketHeader />
+      <TicketHeader onAddClick={handleAddClick} onBackClick={handleBackClick} />
       <div className="mt-8">
         <TicketList
           tickets={tickets || []}
