@@ -3,6 +3,7 @@ import { generateAIResponse } from './ollama.ts';
 import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 import { getAISettings } from './ai-settings.ts';
+import { extractResponseText } from './utils/aiResponseFormatter.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -51,7 +52,7 @@ export async function processWhatsAppMessage(
         sender_name: userName,
         sender_number: userId,
         status: 'received',
-        whatsapp_message_id: whatsappMessageId // Store original WhatsApp ID
+        whatsapp_message_id: whatsappMessageId
       })
       .select()
       .single();
@@ -68,7 +69,7 @@ export async function processWhatsAppMessage(
     // Create context object with all required fields
     const context = {
       userName,
-      messageId: messageData.id, // Use our generated UUID
+      messageId: messageData.id,
       conversationId: conversation.id,
       knowledgeBase: conversationHistory,
       userMessage,
@@ -81,8 +82,9 @@ export async function processWhatsAppMessage(
     const aiResponse = await generateAIResponse(userMessage, context, aiSettings);
     console.log('Generated AI response:', aiResponse);
 
-    // Extract response text
-    const responseText = typeof aiResponse === 'object' ? aiResponse.response || aiResponse.content : aiResponse;
+    // Extract only the response text from the AI response
+    const responseText = extractResponseText(aiResponse);
+    console.log('Extracted response text:', responseText);
 
     // Send WhatsApp response
     const WHATSAPP_ACCESS_TOKEN = Deno.env.get('WHATSAPP_ACCESS_TOKEN')!;
