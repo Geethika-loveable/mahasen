@@ -136,7 +136,7 @@ const PlatformChats = () => {
 
   if (!isValidPlatform(platform)) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6">
+      <div className="min-h-screen bg-[#F1F0FB] dark:bg-slate-900 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center mb-6">
             <Button
@@ -156,12 +156,12 @@ const PlatformChats = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-[#F1F0FB] dark:bg-slate-900 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center mb-6">
           <Button
-            variant="ghost"
-            className="mr-4"
+            variant="secondary"
+            className="mr-4 hover:bg-slate-200 dark:hover:bg-slate-700"
             onClick={() => navigate("/dashboard")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -179,7 +179,7 @@ const PlatformChats = () => {
             {conversations?.map((conversation) => (
               <Card
                 key={conversation.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer hover:shadow-md transition-shadow bg-white dark:bg-slate-800"
                 onClick={() => handleChatClick(conversation.id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
