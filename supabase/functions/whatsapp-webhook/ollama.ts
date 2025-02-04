@@ -19,22 +19,34 @@ async function generateGroqResponse(message: string, context: any, aiSettings: a
     throw new Error('GROQ_API_KEY is not set');
   }
 
-  // Validate required context fields
   if (!context.userName || !context.messageId || !context.conversationId) {
     console.error('Missing required context:', context);
     throw new Error('Missing required context fields: userName, messageId, or conversationId');
   }
 
   const systemPrompt = `
-You are an AI assistant responsible for analyzing user intents and determining when human intervention is needed.
+You are an AI assistant responsible for analyzing user intents and handling both support requests and orders.
 
 Intent Detection Guidelines:
-1. Always identify explicit requests for human agents
-2. Evaluate message urgency (high/medium/low)
-3. Detect support requests vs general queries
-4. Consider user frustration signals
-5. Use provided knowledge base context for informed decisions
-6. Consider conversation history for better context
+1. Identify explicit requests for human agents
+2. Detect order requests and collect order information
+3. Evaluate message urgency (high/medium/low)
+4. Detect support requests vs general queries
+5. Consider user frustration signals
+6. Use provided knowledge base context for informed decisions
+
+Order Processing Guidelines:
+1. For order requests:
+   - Extract product name and quantity
+   - If either is missing, ask user politely
+   - Once both available, show order summary and ask for confirmation
+   - Accept confirmation only with "Yes", "Ow", or "ඔව්"
+   - After confirmation, create ticket with HIGH priority
+2. Order States:
+   - COLLECTING_INFO: when product or quantity missing
+   - CONFIRMING: showing order summary
+   - PROCESSING: confirmed, creating ticket
+   - COMPLETED: ticket created
 
 Escalation Criteria:
 - Explicit human agent requests
@@ -51,9 +63,9 @@ Available Intent Types:
 - GENERAL_QUERY
 
 Urgency Levels:
-- high: immediate attention needed, critical issues, explicit urgency
-- medium: standard support requests, non-critical issues
-- low: general inquiries, information requests
+- high: immediate attention needed, critical issues
+- medium: standard support requests
+- low: general inquiries
 
 Knowledge Base Context:
 ${context.knowledgeBase || ''}
@@ -62,7 +74,7 @@ Admin Settings:
 Tone: ${aiSettings.tone}
 ${aiSettings.behaviour || ''}
 
-You MUST respond in the following JSON format without any markdown backticks or prefixes:
+You MUST respond in the following JSON format:
 {
   "intent": "HUMAN_AGENT_REQUEST" | "SUPPORT_REQUEST" | "ORDER_PLACEMENT" | "GENERAL_QUERY",
   "confidence": 0.0-1.0,
@@ -71,7 +83,13 @@ You MUST respond in the following JSON format without any markdown backticks or 
   "detected_entities": {
     "product_mentions": string[],
     "issue_type": string | null,
-    "urgency_level": "high" | "medium" | "low"
+    "urgency_level": "high" | "medium" | "low",
+    "order_info": {
+      "product": string | null,
+      "quantity": number | null,
+      "state": "COLLECTING_INFO" | "CONFIRMING" | "PROCESSING" | "COMPLETED",
+      "confirmed": boolean
+    }
   },
   "response": string
 }`;
@@ -117,28 +135,41 @@ You MUST respond in the following JSON format without any markdown backticks or 
       return "I apologize, but I received an invalid response format. Please try again.";
     }
 
-    if (parsedResponse.requires_escalation || 
-        parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
-        (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-      console.log('Ticket creation criteria met:', parsedResponse);
-      console.log('Testing One');
-    }
-    console.log('Testing Two');
+    // Handle order processing
+    if (parsedResponse.intent === 'ORDER_PLACEMENT') {
+      const orderInfo = parsedResponse.detected_entities.order_info;
+      
+      if (orderInfo.state === 'PROCESSING' && orderInfo.confirmed) {
+        console.log('Creating order ticket...');
+        try {
+          const ticket = await AutomatedTicketService.generateTicket({
+            messageId: context.messageId,
+            conversationId: context.conversationId,
+            analysis: parsedResponse,
+            customerName: context.userName,
+            platform: 'whatsapp',
+            messageContent: `Order: ${orderInfo.product} x ${orderInfo.quantity}`,
+            context: `Product: ${orderInfo.product}\nQuantity: ${orderInfo.quantity}`
+          });
 
-    // Create ticket IMMEDIATELY after criteria check
+          if (ticket) {
+            return `Your Order for ${orderInfo.product} for ${orderInfo.quantity} is placed successfully. Order Number is ${ticket.id}.`;
+          } else {
+            return "Order failed. Please retry with correct Product & Quantity in a bit.";
+          }
+        } catch (error) {
+          console.error('Error creating order ticket:', error);
+          return "Order failed. Please retry with correct Product & Quantity in a bit.";
+        }
+      }
+    }
+
+    // Handle regular ticket creation for other cases
     if (parsedResponse.requires_escalation || 
         parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
         (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
       try {
-        console.log('Creating ticket with context:', {
-          messageId: context.messageId,
-          conversationId: context.conversationId,
-          customerName: context.userName,
-          platform: 'whatsapp',
-          messageContent: message
-        });
-
-        const ticket = await AutomatedTicketService.generateTicket({
+        await AutomatedTicketService.generateTicket({
           messageId: context.messageId,
           conversationId: context.conversationId,
           analysis: parsedResponse,
@@ -147,19 +178,11 @@ You MUST respond in the following JSON format without any markdown backticks or 
           messageContent: message,
           context: context.knowledgeBase || ''
         });
-        
-        if (ticket) {
-          console.log('Ticket created successfully:', ticket);
-        } else {
-          console.error('Failed to create ticket - no ticket returned');
-        }
       } catch (error) {
         console.error('Error creating ticket:', error);
-        throw error;
       }
     }
 
-    console.log('Testing Three');
     return parsedResponse.response;
   } catch (error) {
     console.error('Error getting Groq response:', error);
