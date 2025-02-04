@@ -19,11 +19,6 @@ async function generateGroqResponse(message: string, context: any, aiSettings: a
     throw new Error('GROQ_API_KEY is not set');
   }
 
-  if (!context.userName || !context.messageId || !context.conversationId) {
-    console.error('Missing required context:', context);
-    throw new Error('Missing required context fields: userName, messageId, or conversationId');
-  }
-
   const systemPrompt = `
 You are an AI assistant responsible for analyzing user intents and handling both support requests and orders.
 
