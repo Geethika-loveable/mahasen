@@ -1,22 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Plus } from "lucide-react";
 
 interface TicketHeaderProps {
   onBackClick: () => void;
-  onAddClick?: () => void;
-  showAddButton?: boolean;
-  title?: string;
+  onAddClick: () => void;
 }
 
-export const TicketHeader = ({ 
-  onBackClick, 
-  onAddClick, 
-  showAddButton = true,
-  title = "Support Tickets" 
-}: TicketHeaderProps) => {
-  const navigate = useNavigate();
-
+export const TicketHeader = ({ onBackClick, onAddClick }: TicketHeaderProps) => {
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center">
@@ -26,27 +16,14 @@ export const TicketHeader = ({
           onClick={onBackClick}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to {title === "Support Tickets" ? "Dashboard" : "Tickets"}
+          Back to Dashboard
         </Button>
-        <h1 className="text-3xl font-bold">{title}</h1>
+        <h1 className="text-3xl font-bold">Support Tickets</h1>
       </div>
-      <div className="flex items-center gap-2">
-        {title === "Support Tickets" && (
-          <Button 
-            variant="outline"
-            onClick={() => navigate("/completed-tickets")}
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Completed Tickets
-          </Button>
-        )}
-        {showAddButton && onAddClick && (
-          <Button onClick={onAddClick}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Ticket
-          </Button>
-        )}
-      </div>
+      <Button onClick={onAddClick}>
+        <Plus className="h-4 w-4 mr-2" />
+        Add Ticket
+      </Button>
     </div>
   );
 };
