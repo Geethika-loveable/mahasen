@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TicketList } from "@/components/tickets/TicketList";
 import { TicketHeader } from "@/components/tickets/TicketHeader";
-import { Ticket } from "@/types/ticket";
+import { Ticket, TicketType } from "@/types/ticket";
 
 const CompletedTickets = () => {
   const navigate = useNavigate();
@@ -27,7 +27,8 @@ const CompletedTickets = () => {
         
         const transformedData = (data || []).map(ticket => ({
           ...ticket,
-          priority: (ticket.priority || 'LOW') as Ticket['priority'],
+          intent_type: ticket.intent_type as TicketType || undefined,
+          priority: ticket.priority || 'LOW',
           assigned_to: ticket.assigned_to || undefined,
           confidence_score: ticket.confidence_score || undefined,
           context: ticket.context || undefined,
