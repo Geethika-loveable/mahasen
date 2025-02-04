@@ -14,11 +14,17 @@ interface IntentAnalysis {
     product_mentions: string[];
     issue_type: string | null;
     urgency_level: 'low' | 'medium' | 'high';
+    order_info?: {
+      product: string;
+      quantity: number;
+      state: 'COLLECTING_INFO' | 'CONFIRMING' | 'PROCESSING' | 'COMPLETED';
+      confirmed: boolean;
+    };
   };
 }
 
 interface AutomatedTicketParams {
-  messageId: string; // This will now be our UUID
+  messageId: string;
   conversationId: string;
   analysis: IntentAnalysis;
   customerName: string;
@@ -39,7 +45,7 @@ export class AutomatedTicketService {
         title: this.generateTicketTitle(params.analysis),
         customer_name: params.customerName,
         platform: params.platform,
-        type: params.analysis.detected_entities?.issue_type || "General",
+        type: params.analysis.detected_entities?.issue_type || "Order",
         body: params.messageContent,
         message_id: params.messageId,
         conversation_id: params.conversationId,
@@ -72,6 +78,14 @@ export class AutomatedTicketService {
   }
 
   private static evaluateTicketCreationCriteria(analysis: IntentAnalysis): boolean {
+    // Check for order placement with confirmation
+    if (analysis.intent === 'ORDER_PLACEMENT' && 
+        analysis.detected_entities.order_info?.state === 'PROCESSING' && 
+        analysis.detected_entities.order_info?.confirmed) {
+      return true;
+    }
+
+    // Keep existing criteria
     return (
       analysis.requires_escalation ||
       analysis.intent === 'HUMAN_AGENT_REQUEST' ||
@@ -81,6 +95,12 @@ export class AutomatedTicketService {
   }
 
   private static determinePriority(analysis: IntentAnalysis): 'LOW' | 'MEDIUM' | 'HIGH' {
+    // Orders always get HIGH priority
+    if (analysis.intent === 'ORDER_PLACEMENT' && 
+        analysis.detected_entities.order_info?.confirmed) {
+      return 'HIGH';
+    }
+    
     if (analysis.intent === 'HUMAN_AGENT_REQUEST' || 
         analysis.detected_entities?.urgency_level === 'high') {
       return 'HIGH';
@@ -94,6 +114,11 @@ export class AutomatedTicketService {
   }
 
   private static determineTicketType(analysis: IntentAnalysis): string {
+    if (analysis.intent === 'ORDER_PLACEMENT' && 
+        analysis.detected_entities.order_info?.confirmed) {
+      return 'ORDER';
+    }
+
     switch (analysis.intent) {
       case 'ORDER_PLACEMENT':
         return 'ORDER';
@@ -105,6 +130,12 @@ export class AutomatedTicketService {
   }
 
   private static generateTicketTitle(analysis: IntentAnalysis): string {
+    if (analysis.intent === 'ORDER_PLACEMENT' && 
+        analysis.detected_entities.order_info?.confirmed) {
+      const { product, quantity } = analysis.detected_entities.order_info;
+      return `Order: ${product} (Qty: ${quantity})`;
+    }
+
     if (analysis.intent === 'HUMAN_AGENT_REQUEST') {
       return 'Human Agent Request';
     }
