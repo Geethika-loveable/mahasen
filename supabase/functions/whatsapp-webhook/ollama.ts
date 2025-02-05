@@ -32,13 +32,14 @@ Intent Detection Guidelines:
 
 Order Processing Guidelines:
 1. For order requests:
-   - Extract product name and quantity
-   - If either is missing, ask user politely
-   - Once both available, show order summary and ask for confirmation
+   - Extract product name
+   - Default quantity to 1 unless explicitly specified by the user
+   - Only ask for product name if missing
+   - Once product name is available, show order summary with quantity (default 1 or specified) and ask for confirmation
    - Accept confirmation only with "Yes", "Ow", or "ඔව්"
    - After confirmation, create ticket with HIGH priority
 2. Order States:
-   - COLLECTING_INFO: when product or quantity missing
+   - COLLECTING_INFO: when product missing
    - CONFIRMING: showing order summary
    - PROCESSING: confirmed, creating ticket
    - COMPLETED: ticket created
@@ -81,7 +82,7 @@ You MUST respond in the following JSON format:
     "urgency_level": "high" | "medium" | "low",
     "order_info": {
       "product": string | null,
-      "quantity": number | null,
+      "quantity": number,
       "state": "COLLECTING_INFO" | "CONFIRMING" | "PROCESSING" | "COMPLETED",
       "confirmed": boolean
     }
@@ -132,6 +133,21 @@ You MUST respond in the following JSON format:
 
     // Handle order processing
     if (parsedResponse.intent === 'ORDER_PLACEMENT') {
+      // Ensure order_info exists and has default quantity of 1
+      if (!parsedResponse.detected_entities.order_info) {
+        parsedResponse.detected_entities.order_info = {
+          product: null,
+          quantity: 1,
+          state: 'COLLECTING_INFO',
+          confirmed: false
+        };
+      }
+      
+      // Set default quantity if not explicitly specified
+      if (!parsedResponse.detected_entities.order_info.quantity) {
+        parsedResponse.detected_entities.order_info.quantity = 1;
+      }
+      
       const orderInfo = parsedResponse.detected_entities.order_info;
       
       if (orderInfo.state === 'PROCESSING' && orderInfo.confirmed) {
