@@ -6,7 +6,7 @@ interface TicketInfoProps {
 
 export const TicketInfo = ({ ticket }: TicketInfoProps) => {
   return (
-    <>
+    <div className="space-y-4">
       <div className="space-y-2">
         <h4 className="font-medium">Customer</h4>
         <p>{ticket.customer_name}</p>
@@ -40,7 +40,9 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
 
       <div className="space-y-2">
         <h4 className="font-medium">Description</h4>
-        <p className="whitespace-pre-wrap">{ticket.body}</p>
+        <div className="border-2 border-green-500 rounded-lg p-4 bg-white">
+          <p className="whitespace-pre-wrap">{ticket.body}</p>
+        </div>
       </div>
 
       {ticket.context && (
@@ -49,6 +51,6 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
           <p className="whitespace-pre-wrap">{ticket.context}</p>
         </div>
       )}
-    </>
+    </div>
   );
 };

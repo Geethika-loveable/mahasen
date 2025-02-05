@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Ticket } from "@/types/ticket";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TicketHeader } from "./ticket-details/TicketHeader";
 import { TicketStatus } from "./ticket-details/TicketStatus";
 import { TicketPrioritySection } from "./ticket-details/TicketPriority";
@@ -209,45 +210,47 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Ticket #{ticket.id}</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <TicketHeader ticket={ticket} />
-          
-          <div className="flex justify-end">
-            <TicketStatus 
-              status={status} 
-              isUpdating={isUpdating} 
-              onStatusChange={handleStatusChange} 
+        <ScrollArea className="h-full pr-4">
+          <div className="space-y-6 pb-6">
+            <TicketHeader ticket={ticket} />
+            
+            <div className="flex justify-end">
+              <TicketStatus 
+                status={status} 
+                isUpdating={isUpdating} 
+                onStatusChange={handleStatusChange} 
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TicketPrioritySection
+                priority={priority}
+                isUpdating={isUpdating}
+                onPriorityChange={handlePriorityChange}
+              />
+
+              <TicketAssignment
+                assignedTo={assignedTo}
+                isUpdating={isUpdating}
+                onAssignmentChange={handleAssignmentChange}
+              />
+            </div>
+
+            <TicketInfo ticket={ticket} />
+            
+            <TicketHistory history={ticketHistory} />
+            
+            <TicketActions 
+              conversationId={ticket.conversation_id} 
+              onGoToMessage={handleGoToMessage}
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <TicketPrioritySection
-              priority={priority}
-              isUpdating={isUpdating}
-              onPriorityChange={handlePriorityChange}
-            />
-
-            <TicketAssignment
-              assignedTo={assignedTo}
-              isUpdating={isUpdating}
-              onAssignmentChange={handleAssignmentChange}
-            />
-          </div>
-
-          <TicketInfo ticket={ticket} />
-          
-          <TicketHistory history={ticketHistory} />
-          
-          <TicketActions 
-            conversationId={ticket.conversation_id} 
-            onGoToMessage={handleGoToMessage}
-          />
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
