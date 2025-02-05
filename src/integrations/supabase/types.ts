@@ -154,6 +154,7 @@ export type Database = {
           sender_name: string
           sender_number: string
           status: Database["public"]["Enums"]["message_status"]
+          whatsapp_message_id: string | null
         }
         Insert: {
           content: string
@@ -164,6 +165,7 @@ export type Database = {
           sender_name: string
           sender_number: string
           status: Database["public"]["Enums"]["message_status"]
+          whatsapp_message_id?: string | null
         }
         Update: {
           content?: string
@@ -174,6 +176,7 @@ export type Database = {
           sender_name?: string
           sender_number?: string
           status?: Database["public"]["Enums"]["message_status"]
+          whatsapp_message_id?: string | null
         }
         Relationships: [
           {
@@ -209,36 +212,149 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_history: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string | null
+          id: number
+          new_assigned_to: string | null
+          new_status: string | null
+          previous_assigned_to: string | null
+          previous_status: string | null
+          ticket_id: number | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: number
+          new_assigned_to?: string | null
+          new_status?: string | null
+          previous_assigned_to?: string | null
+          previous_status?: string | null
+          ticket_id?: number | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: number
+          new_assigned_to?: string | null
+          new_status?: string | null
+          previous_assigned_to?: string | null
+          previous_status?: string | null
+          ticket_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_history_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
+          assigned_to: string | null
           body: string
+          confidence_score: number | null
+          context: string | null
+          conversation_id: string | null
           created_at: string
           customer_name: string
+          escalation_reason: string | null
           id: number
+          intent_type: string | null
+          last_updated_at: string | null
+          message_id: string | null
           platform: Database["public"]["Enums"]["platform_type"]
+          priority: string | null
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
         }
         Insert: {
+          assigned_to?: string | null
           body: string
+          confidence_score?: number | null
+          context?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_name: string
+          escalation_reason?: string | null
           id?: number
+          intent_type?: string | null
+          last_updated_at?: string | null
+          message_id?: string | null
           platform: Database["public"]["Enums"]["platform_type"]
+          priority?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
         }
         Update: {
+          assigned_to?: string | null
           body?: string
+          confidence_score?: number | null
+          context?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_name?: string
+          escalation_reason?: string | null
           id?: number
+          intent_type?: string | null
+          last_updated_at?: string | null
+          message_id?: string | null
           platform?: Database["public"]["Enums"]["platform_type"]
+          priority?: string | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_errors: {
+        Row: {
+          created_at: string
+          details: Json | null
+          error_type: string
+          id: string
+          message: string
+          notified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          error_type: string
+          id?: string
+          message: string
+          notified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          error_type?: string
+          id?: string
+          message?: string
+          notified?: boolean | null
         }
         Relationships: []
       }
@@ -247,211 +363,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-      halfvec_avg: {
+      match_knowledge_base: {
         Args: {
-          "": number[]
+          query_text: string
+          query_embedding: string
+          match_count?: number
+          full_text_weight?: number
+          semantic_weight?: number
+          match_threshold?: number
+          rrf_k?: number
         }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: number
-      }
-      hnsw_bit_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      ivfflat_bit_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      l2_norm:
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-      l2_normalize:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: unknown
-          }
-      match_knowledge_base:
-        | {
-            Args: {
-              query_embedding: string
-              match_threshold: number
-              match_count: number
-            }
-            Returns: {
-              id: string
-              content: string
-              similarity: number
-            }[]
-          }
-        | {
-            Args: {
-              query_text: string
-              query_embedding: string
-              match_count?: number
-              full_text_weight?: number
-              semantic_weight?: number
-              match_threshold?: number
-              rrf_k?: number
-            }
-            Returns: {
-              id: string
-              content: string
-              similarity: number
-            }[]
-          }
-      sparsevec_out: {
-        Args: {
-          "": unknown
-        }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: {
-          "": unknown
-        }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: number
-      }
-      vector_avg: {
-        Args: {
-          "": number[]
-        }
-        Returns: string
-      }
-      vector_dims:
-        | {
-            Args: {
-              "": string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              "": unknown
-            }
-            Returns: number
-          }
-      vector_norm: {
-        Args: {
-          "": string
-        }
-        Returns: number
-      }
-      vector_out: {
-        Args: {
-          "": string
-        }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: {
-          "": string
-        }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: {
-          "": unknown[]
-        }
-        Returns: number
+        Returns: {
+          id: string
+          content: string
+          similarity: number
+        }[]
       }
     }
     Enums: {
       agent_type: "welcome" | "sales" | "knowledge" | "support"
-      ai_model: "llama3.2:latest" | "gemini-2.0-flash-exp"
+      ai_model:
+        | "deepseek-r1-distill-llama-70b"
+        | "gemini-2.0-flash-exp"
+        | "groq-llama-3.3-70b-versatile"
       ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
       message_status: "sent" | "received"
       platform_type: "whatsapp" | "facebook" | "instagram"

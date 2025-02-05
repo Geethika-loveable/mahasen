@@ -9,19 +9,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TicketDetailsDialog } from "./TicketDetailsDialog";
-
-interface Ticket {
-  id: number;
-  title: string;
-  customer_name: string;
-  platform: "whatsapp" | "facebook" | "instagram";
-  type: string;
-  status: "New" | "In Progress" | "Escalated" | "Completed";
-  created_at: string;
-  body: string;
-}
+import { Ticket, TicketPriority } from "@/types/ticket";
 
 interface TicketListProps {
   tickets: Ticket[];
@@ -46,9 +36,21 @@ const platformColors = {
   instagram: "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-300",
 };
 
+const priorityColors: Record<TicketPriority, string> = {
+  LOW: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
+  MEDIUM: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
+  HIGH: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+};
+
 export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: TicketListProps) => {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
 
   const handleSort = (key: keyof Ticket) => {
     onSortChange({
@@ -79,8 +81,12 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
     return 0;
   });
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <>
+    <div className="relative">
       <Table>
         <TableHeader>
           <TableRow>
@@ -102,21 +108,27 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
             <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('status')}>
               Status {getSortIcon('status')}
             </TableHead>
+            <TableHead className="w-32 cursor-pointer" onClick={() => handleSort('priority')}>
+              Priority {getSortIcon('priority')}
+            </TableHead>
+            <TableHead className="w-32">
+              Assigned To
+            </TableHead>
             <TableHead className="w-40 cursor-pointer" onClick={() => handleSort('created_at')}>
-              Date & Time {getSortIcon('created_at')}
+              Created {getSortIcon('created_at')}
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={9} className="text-center py-8">
                 Loading tickets...
               </TableCell>
             </TableRow>
           ) : sortedTickets.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={9} className="text-center py-8">
                 No tickets found
               </TableCell>
             </TableRow>
@@ -142,6 +154,16 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  {ticket.priority && (
+                    <Badge variant="secondary" className={priorityColors[ticket.priority]}>
+                      {ticket.priority}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {ticket.assigned_to || '-'}
+                </TableCell>
+                <TableCell>
                   {format(new Date(ticket.created_at), "MMM d, yyyy HH:mm")}
                 </TableCell>
               </TableRow>
@@ -155,6 +177,6 @@ export const TicketList = ({ tickets, loading, sortConfig, onSortChange }: Ticke
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
       />
-    </>
+    </div>
   );
 };

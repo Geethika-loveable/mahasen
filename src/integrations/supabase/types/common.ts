@@ -7,39 +7,31 @@ import { MessengerTables } from './messenger';
 import { TicketTables } from './tickets';
 import { DatabaseFunctions } from './database-functions';
 
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
-
 export type Database = {
   public: {
-    Tables: AgentTables & 
-           AiSettingsTables & 
-           ConversationTables & 
-           KnowledgeBaseTables & 
-           MessageTables & 
-           MessengerTables & 
-           TicketTables
+    Tables: AgentTables &
+      AiSettingsTables &
+      ConversationTables &
+      KnowledgeBaseTables &
+      MessageTables &
+      MessengerTables &
+      TicketTables;
     Views: {
-      [_ in never]: never
-    }
-    Functions: DatabaseFunctions
-    Enums: DatabaseEnums
+      [_ in never]: never;
+    };
+    Functions: DatabaseFunctions;
+    Enums: {
+      ai_model: "groq-llama-3.3-70b-versatile" | "gemini-2.0-flash-exp" | "deepseek-r1-distill-llama-70b";
+      ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful";
+      message_status: "sent" | "delivered" | "read" | "failed";
+      platform: "whatsapp" | "facebook" | "instagram" | "telegram";
+      ticket_status: "New" | "In Progress" | "Resolved" | "Closed";
+      agent_type: "welcome" | "sales" | "knowledge" | "support";
+    };
     CompositeTypes: {
-      [_ in never]: never
-    }
-  }
-}
+      [_ in never]: never;
+    };
+  };
+};
 
-export type DatabaseEnums = {
-  agent_type: "welcome" | "sales" | "knowledge" | "support"
-  ai_model: "llama3.2:latest" | "gemini-2.0-flash-exp"
-  ai_tone: "Professional" | "Friendly" | "Empathetic" | "Playful"
-  message_status: "sent" | "received"
-  platform_type: "whatsapp" | "facebook" | "instagram"
-  ticket_status: "New" | "In Progress" | "Escalated" | "Completed"
-}
+export type DatabaseEnums = Database['public']['Enums'];

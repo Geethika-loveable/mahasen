@@ -18,6 +18,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import AISettings from "./pages/AISettings";
 import AgentFlow from "./pages/AgentFlow";
 import Tickets from "./pages/Tickets";
+import CompletedTickets from "./pages/CompletedTickets";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -190,6 +191,16 @@ const App = () => {
                 element={
                   isAuthenticated ? (
                     <Tickets />
+                  ) : (
+                    <Navigate to="/login" replace />
+                  )
+                }
+              />
+              <Route
+                path="/completed-tickets"
+                element={
+                  isAuthenticated ? (
+                    <CompletedTickets />
                   ) : (
                     <Navigate to="/login" replace />
                   )

@@ -19,12 +19,12 @@ export const ChatHeader = ({
   const navigate = useNavigate();
 
   return (
-    <div className="fixed top-0 left-0 right-0 bg-white dark:bg-slate-800 border-b dark:border-slate-700 p-4 z-10">
+    <div className="fixed top-0 left-0 right-0 bg-[#F1F0FB] dark:bg-slate-800 border-b dark:border-slate-700 p-4 z-10">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         <div className="flex items-center">
           <Button
-            variant="ghost"
-            className="mr-4"
+            variant="secondary"
+            className="mr-4 hover:bg-slate-200 dark:hover:bg-slate-700"
             onClick={() => navigate(`/chats/${platform}`)}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

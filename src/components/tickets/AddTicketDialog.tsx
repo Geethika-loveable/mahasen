@@ -33,16 +33,16 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
       title: "",
       customer_name: "",
       platform: "whatsapp",
-      type: "",
+      type: "REQUEST",
       status: "New",
       body: "",
+      priority: "HIGH",
     },
   });
 
   const onSubmit = async (values: TicketFormValues) => {
     setIsSubmitting(true);
     try {
-      // Ensure all required fields are present and match the database schema
       const ticketData = {
         title: values.title,
         customer_name: values.customer_name,
@@ -50,6 +50,10 @@ export function AddTicketDialog({ open, onOpenChange, onTicketAdded }: AddTicket
         type: values.type,
         status: values.status,
         body: values.body,
+        priority: values.priority,
+        assigned_to: values.assigned_to,
+        intent_type: "HUMAN_AGENT_REQUEST",
+        escalation_reason: "Customer explicitly requested human agent",
       };
 
       const { data, error } = await supabase

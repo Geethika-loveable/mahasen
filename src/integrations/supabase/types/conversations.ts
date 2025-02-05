@@ -8,7 +8,7 @@ export type ConversationTables = {
       contact_number: string
       created_at: string | null
       id: string
-      platform: DatabaseEnums["platform_type"]
+      platform: DatabaseEnums["platform"]
       updated_at: string | null
     }
     Insert: {
@@ -17,7 +17,7 @@ export type ConversationTables = {
       contact_number: string
       created_at?: string | null
       id?: string
-      platform: DatabaseEnums["platform_type"]
+      platform: DatabaseEnums["platform"]
       updated_at?: string | null
     }
     Update: {
@@ -26,7 +26,7 @@ export type ConversationTables = {
       contact_number?: string
       created_at?: string | null
       id?: string
-      platform?: DatabaseEnums["platform_type"]
+      platform?: DatabaseEnums["platform"]
       updated_at?: string | null
     }
     Relationships: []

@@ -1,32 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ArrowUpNarrowWide, ArrowDownNarrowWide } from "lucide-react";
-import { format } from "date-fns";
 import { AddTicketDialog } from "@/components/tickets/AddTicketDialog";
 import { TicketList } from "@/components/tickets/TicketList";
 import { TicketHeader } from "@/components/tickets/TicketHeader";
-
-interface Ticket {
-  id: number;
-  title: string;
-  customer_name: string;
-  platform: "whatsapp" | "facebook" | "instagram";
-  type: string;
-  status: "New" | "In Progress" | "Escalated" | "Completed";
-  created_at: string;
-  body: string;
-}
+import { Ticket, TicketType, TicketPriority } from "@/types/ticket";
 
 const Tickets = () => {
   const navigate = useNavigate();
@@ -44,10 +22,26 @@ const Tickets = () => {
         const { data, error } = await supabase
           .from("tickets")
           .select("*")
+          .neq('status', 'Completed') // Filter out completed tickets
           .order('id', { ascending: true });
 
         if (error) throw error;
-        setTickets(data || []);
+        
+        // Transform the data to ensure all fields match their expected types
+        const transformedData = (data || []).map(ticket => ({
+          ...ticket,
+          intent_type: ticket.intent_type as TicketType,
+          priority: (ticket.priority || 'LOW') as TicketPriority,
+          assigned_to: ticket.assigned_to || undefined,
+          confidence_score: ticket.confidence_score || undefined,
+          context: ticket.context || undefined,
+          conversation_id: ticket.conversation_id || undefined,
+          escalation_reason: ticket.escalation_reason || undefined,
+          message_id: ticket.message_id || undefined,
+          last_updated_at: ticket.last_updated_at || undefined
+        }));
+
+        setTickets(transformedData);
       } catch (error) {
         console.error("Error fetching tickets:", error);
       } finally {
@@ -56,6 +50,28 @@ const Tickets = () => {
     };
 
     fetchTickets();
+
+    // Subscribe to changes in the tickets table
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          filter: 'status=neq.Completed'
+        },
+        () => {
+          // Refetch tickets when there are changes
+          fetchTickets();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
@@ -71,7 +87,7 @@ const Tickets = () => {
             tickets={tickets}
             loading={loading}
             sortConfig={sortConfig}
-            onSortChange={setSortConfig}
+            onSortChange={(config) => setSortConfig(config)}
           />
         </div>
       </div>

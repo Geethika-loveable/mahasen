@@ -9,10 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AdvancedSettings } from "@/components/ai-settings/AdvancedSettings";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import type { AITone } from "@/types/ai";
-import { AdvancedSettings } from "@/components/ai-settings/AdvancedSettings";
+import type { Database } from "@/integrations/supabase/types/common";
+
+type AIModel = Database['public']['Enums']['ai_model'];
 
 const AISettings = () => {
   const navigate = useNavigate();
@@ -22,7 +25,7 @@ const AISettings = () => {
   const [contextMemoryLength, setContextMemoryLength] = useState<string>("2");
   const [conversationTimeout, setConversationTimeout] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [modelName, setModelName] = useState<"llama3.2:latest" | "gemini-2.0-flash-exp">("llama3.2:latest");
+  const [modelName, setModelName] = useState<AIModel>("deepseek-r1-distill-llama-70b");
   const [isModelChangeDisabled, setIsModelChangeDisabled] = useState(false);
 
   useEffect(() => {
@@ -49,7 +52,7 @@ const AISettings = () => {
           setBehaviour(data.behaviour || "");
           setContextMemoryLength(data.context_memory_length?.toString() || "2");
           setConversationTimeout(data.conversation_timeout_hours || 1);
-          setModelName(data.model_name || "llama3.2:latest");
+          setModelName(data.model_name);
         }
       } catch (error) {
         console.error('Error loading AI settings:', error);
@@ -63,7 +66,6 @@ const AISettings = () => {
 
     loadSettings();
 
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         navigate("/login");
@@ -75,7 +77,7 @@ const AISettings = () => {
     };
   }, [toast, navigate]);
 
-  const handleModelChange = (value: "llama3.2:latest" | "gemini-2.0-flash-exp") => {
+  const handleModelChange = (value: AIModel) => {
     setModelName(value);
     setIsModelChangeDisabled(true);
     setTimeout(() => {
@@ -174,7 +176,7 @@ const AISettings = () => {
             modelName={modelName}
             onContextMemoryChange={setContextMemoryLength}
             onTimeoutChange={setConversationTimeout}
-            onModelChange={handleModelChange}
+            onModelChange={setModelName}
             isModelChangeDisabled={isModelChangeDisabled}
           />
 
