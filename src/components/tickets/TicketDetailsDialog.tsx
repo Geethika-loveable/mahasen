@@ -142,6 +142,12 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
         title: "Status updated",
         description: `Ticket status changed to ${newStatus}`,
       });
+
+      // If the ticket is marked as completed, close the dialog and navigate
+      if (newStatus === 'Completed') {
+        onOpenChange(false);
+        navigate('/completed-tickets');
+      }
     } catch (error) {
       console.error("Error updating ticket status:", error);
       toast({
