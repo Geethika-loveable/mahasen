@@ -22,6 +22,7 @@ const Tickets = () => {
         const { data, error } = await supabase
           .from("tickets")
           .select("*")
+          .neq('status', 'Completed') // Filter out completed tickets
           .order('id', { ascending: true });
 
         if (error) throw error;
@@ -29,7 +30,7 @@ const Tickets = () => {
         // Transform the data to ensure all fields match their expected types
         const transformedData = (data || []).map(ticket => ({
           ...ticket,
-          intent_type: ticket.intent_type as TicketType | undefined,
+          intent_type: ticket.intent_type as TicketType,
           priority: (ticket.priority || 'LOW') as TicketPriority,
           assigned_to: ticket.assigned_to || undefined,
           confidence_score: ticket.confidence_score || undefined,
@@ -49,6 +50,28 @@ const Tickets = () => {
     };
 
     fetchTickets();
+
+    // Subscribe to changes in the tickets table
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+          filter: 'status=neq.Completed'
+        },
+        () => {
+          // Refetch tickets when there are changes
+          fetchTickets();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (
