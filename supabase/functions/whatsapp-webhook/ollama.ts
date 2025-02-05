@@ -36,6 +36,7 @@ Order Processing Guidelines:
    - Default quantity to 1 unless explicitly specified by the user
    - Only ask for product name if missing
    - Once product name is available, show order summary with quantity (default 1 or specified) and ask for confirmation
+   - Always ask user to confirm the order by typing "Yes", "Ow", or "ඔව්" 
    - Accept confirmation only with "Yes", "Ow", or "ඔව්"
    - After confirmation, create ticket with HIGH priority
 2. Order States:
