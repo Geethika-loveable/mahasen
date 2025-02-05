@@ -24,7 +24,7 @@ export const TicketHeader = ({
           onClick={onBackClick}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
+          Back
         </Button>
         <h1 className="text-3xl font-bold">
           {showAddButton ? "Support Tickets" : "Completed Tickets"}
