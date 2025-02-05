@@ -24,6 +24,13 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
         </div>
       )}
 
+      <div className="space-y-2">
+        <h4 className="font-medium">Description</h4>
+        <div className="border-2 border-green-500 rounded-lg p-4 bg-white">
+          <p className="whitespace-pre-wrap">{ticket.body}</p>
+        </div>
+      </div>
+
       {ticket.confidence_score !== undefined && (
         <div className="space-y-2">
           <h4 className="font-medium">Confidence Score</h4>
@@ -38,12 +45,6 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
         </div>
       )}
 
-      <div className="space-y-2">
-        <h4 className="font-medium">Description</h4>
-        <div className="border-2 border-green-500 rounded-lg p-4">
-          <p className="whitespace-pre-wrap">{ticket.body}</p>
-        </div>
-      </div>
 
       {ticket.context && (
         <div className="space-y-2">
