@@ -98,7 +98,7 @@ export async function processWhatsAppMessage(
     const WHATSAPP_PHONE_ID = Deno.env.get('WHATSAPP_PHONE_ID')!;
     await sendWhatsAppMessage(userId, responseText, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_ID);
 
-    // Store the conversation
+    // Store the AI response
     await storeConversation(supabase, userId, userName, userMessage, responseText);
 
   } catch (error) {
