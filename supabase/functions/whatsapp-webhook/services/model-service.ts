@@ -1,4 +1,5 @@
 import { AIContext, AIResponse, AISettings } from "../types/ai-response.ts";
+import { generateSystemPrompt } from "./prompt-service.ts";
 
 export async function generateGroqResponse(
   message: string,
