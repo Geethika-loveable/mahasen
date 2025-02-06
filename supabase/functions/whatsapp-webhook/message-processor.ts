@@ -4,6 +4,7 @@ import { sendWhatsAppMessage } from './whatsapp.ts';
 import { storeConversation } from './database.ts';
 import { getAISettings } from './ai-settings.ts';
 import { extractResponseText } from './utils/aiResponseFormatter.ts';
+import { matchKnowledgeBase } from './knowledge-base.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -43,7 +44,7 @@ export async function processWhatsAppMessage(
 
     console.log('Found conversation:', conversation);
 
-    // Create a message record with our own UUID
+    // Create a message record
     const { data: messageData, error: messageError } = await supabase
       .from("messages")
       .insert({
@@ -66,14 +67,20 @@ export async function processWhatsAppMessage(
     const aiSettings = await getAISettings();
     const conversationHistory = await getRecentConversationHistory(userId, aiSettings);
 
+    // Retrieve relevant knowledge base content
+    console.log('Retrieving knowledge base content for:', userMessage);
+    const knowledgeBaseContent = await matchKnowledgeBase(userMessage);
+    console.log('Retrieved knowledge base content:', knowledgeBaseContent);
+
     // Create context object with all required fields
     const context = {
       userName,
       messageId: messageData.id,
       conversationId: conversation.id,
-      knowledgeBase: conversationHistory,
+      knowledgeBase: knowledgeBaseContent,
       userMessage,
-      platform: 'whatsapp' as const
+      platform: 'whatsapp' as const,
+      conversationHistory
     };
 
     console.log('Prepared context for AI response:', context);
@@ -82,7 +89,7 @@ export async function processWhatsAppMessage(
     const aiResponse = await generateAIResponse(userMessage, context, aiSettings);
     console.log('Generated AI response:', aiResponse);
 
-    // Extract only the response text from the AI response
+    // Extract only the response text
     const responseText = extractResponseText(aiResponse);
     console.log('Extracted response text:', responseText);
 
