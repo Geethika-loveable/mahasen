@@ -14,6 +14,8 @@ export class IntentProcessor {
     intent_types: ['HUMAN_AGENT_REQUEST', 'SUPPORT_REQUEST', 'ORDER_PLACEMENT', 'GENERAL_QUERY']
   };
 
+  private static readonly CONFIRMATION_WORDS = ['yes', 'ow', 'ඔව්'];
+
   static validateIntentStructure(response: any): boolean {
     if (!response || typeof response !== 'object') return false;
 
@@ -54,12 +56,37 @@ export class IntentProcessor {
             analysis.detected_entities.urgency_level === 'high');
   }
 
-  static processOrderInfo(orderInfo: any): any {
+  static isConfirmationMessage(message: string): boolean {
+    return this.CONFIRMATION_WORDS.includes(message.toLowerCase().trim());
+  }
+
+  static processOrderInfo(orderInfo: any, message?: string): any {
+    // If there's no existing order info, create initial state
     if (!orderInfo) {
       return {
         product: null,
         quantity: 1,
         state: 'COLLECTING_INFO',
+        confirmed: false
+      };
+    }
+
+    // Handle confirmation messages
+    if (message && this.isConfirmationMessage(message)) {
+      if (orderInfo.state === 'CONFIRMING' && orderInfo.product) {
+        return {
+          ...orderInfo,
+          state: 'PROCESSING',
+          confirmed: true
+        };
+      }
+    }
+
+    // If we have a product but haven't asked for confirmation yet
+    if (orderInfo.product && orderInfo.state === 'COLLECTING_INFO') {
+      return {
+        ...orderInfo,
+        state: 'CONFIRMING',
         confirmed: false
       };
     }

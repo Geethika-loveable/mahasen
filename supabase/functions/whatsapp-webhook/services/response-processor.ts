@@ -2,7 +2,7 @@
 import { IntentProcessor } from './intent-processor.ts';
 
 export class ResponseProcessor {
-  static async processAIResponse(rawResponse: string): Promise<any> {
+  static async processAIResponse(rawResponse: string, userMessage?: string): Promise<any> {
     try {
       let cleanedResponse = rawResponse
         .replace(/<think>[\s\S]*?<\/think>/g, '')
@@ -21,7 +21,10 @@ export class ResponseProcessor {
       // Process order info if present
       if (parsedResponse.intent === 'ORDER_PLACEMENT') {
         parsedResponse.detected_entities.order_info = 
-          IntentProcessor.processOrderInfo(parsedResponse.detected_entities.order_info);
+          IntentProcessor.processOrderInfo(
+            parsedResponse.detected_entities.order_info,
+            userMessage
+          );
       }
 
       return parsedResponse;
