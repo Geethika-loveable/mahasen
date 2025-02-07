@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -227,6 +228,53 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
               />
             </div>
 
+            <div className="space-y-2">
+              <h4 className="font-medium">Description</h4>
+              <div className="border-2 border-green-500 rounded-lg p-4">
+                <p className="whitespace-pre-wrap">{ticket.body}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <h4 className="font-medium">Customer</h4>
+                <p>{ticket.customer_name}</p>
+              </div>
+
+              <div className="flex-1 min-w-[200px]">
+                <h4 className="font-medium">Type</h4>
+                <p>{ticket.type}</p>
+              </div>
+
+              {ticket.intent_type && (
+                <div className="flex-1 min-w-[200px]">
+                  <h4 className="font-medium">Intent Type</h4>
+                  <p>{ticket.intent_type}</p>
+                </div>
+              )}
+            </div>
+
+            {ticket.context && (
+              <div className="space-y-2">
+                <h4 className="font-medium">Conversation Context</h4>
+                <p className="whitespace-pre-wrap">{ticket.context}</p>
+              </div>
+            )}
+
+            {ticket.escalation_reason && (
+              <div className="space-y-2">
+                <h4 className="font-medium">Escalation Reason</h4>
+                <p>{ticket.escalation_reason}</p>
+              </div>
+            )}
+            
+            <TicketHistory history={ticketHistory} />
+            
+            <TicketActions 
+              conversationId={ticket.conversation_id} 
+              onGoToMessage={handleGoToMessage}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TicketPrioritySection
                 priority={priority}
@@ -241,14 +289,12 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
               />
             </div>
 
-            <TicketInfo ticket={ticket} />
-            
-            <TicketHistory history={ticketHistory} />
-            
-            <TicketActions 
-              conversationId={ticket.conversation_id} 
-              onGoToMessage={handleGoToMessage}
-            />
+            {ticket.confidence_score !== undefined && (
+              <div className="space-y-2">
+                <h4 className="font-medium">Confidence Score</h4>
+                <p>{(ticket.confidence_score * 100).toFixed(1)}%</p>
+              </div>
+            )}
           </div>
         </ScrollArea>
       </DialogContent>

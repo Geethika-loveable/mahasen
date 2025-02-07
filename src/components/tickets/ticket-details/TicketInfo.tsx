@@ -1,3 +1,4 @@
+
 import { Ticket } from "@/types/ticket";
 
 interface TicketInfoProps {
@@ -7,22 +8,24 @@ interface TicketInfoProps {
 export const TicketInfo = ({ ticket }: TicketInfoProps) => {
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <h4 className="font-medium">Customer</h4>
-        <p>{ticket.customer_name}</p>
-      </div>
-
-      <div className="space-y-2">
-        <h4 className="font-medium">Type</h4>
-        <p>{ticket.type}</p>
-      </div>
-
-      {ticket.intent_type && (
-        <div className="space-y-2">
-          <h4 className="font-medium">Intent Type</h4>
-          <p>{ticket.intent_type}</p>
+      <div className="flex flex-wrap gap-4">
+        <div className="flex-1 min-w-[200px]">
+          <h4 className="font-medium">Customer</h4>
+          <p>{ticket.customer_name}</p>
         </div>
-      )}
+
+        <div className="flex-1 min-w-[200px]">
+          <h4 className="font-medium">Type</h4>
+          <p>{ticket.type}</p>
+        </div>
+
+        {ticket.intent_type && (
+          <div className="flex-1 min-w-[200px]">
+            <h4 className="font-medium">Intent Type</h4>
+            <p>{ticket.intent_type}</p>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2">
         <h4 className="font-medium">Description</h4>
@@ -31,10 +34,10 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
         </div>
       </div>
 
-      {ticket.confidence_score !== undefined && (
+      {ticket.context && (
         <div className="space-y-2">
-          <h4 className="font-medium">Confidence Score</h4>
-          <p>{(ticket.confidence_score * 100).toFixed(1)}%</p>
+          <h4 className="font-medium">Conversation Context</h4>
+          <p className="whitespace-pre-wrap">{ticket.context}</p>
         </div>
       )}
 
@@ -42,14 +45,6 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
         <div className="space-y-2">
           <h4 className="font-medium">Escalation Reason</h4>
           <p>{ticket.escalation_reason}</p>
-        </div>
-      )}
-
-
-      {ticket.context && (
-        <div className="space-y-2">
-          <h4 className="font-medium">Conversation Context</h4>
-          <p className="whitespace-pre-wrap">{ticket.context}</p>
         </div>
       )}
     </div>
