@@ -2,13 +2,11 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
 import { Ticket, TicketPriority } from "@/types/ticket";
 
 export const useTicketUpdates = (ticket: Ticket | null, onClose: () => void) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleStatusChange = async (newStatus: Ticket["status"]) => {
     if (!ticket) return;
@@ -42,9 +40,9 @@ export const useTicketUpdates = (ticket: Ticket | null, onClose: () => void) => 
         description: `Ticket status changed to ${newStatus}`,
       });
 
+      // Removed the redirection logic, just close the dialog
       if (newStatus === 'Completed') {
         onClose();
-        navigate('/completed-tickets');
       }
     } catch (error) {
       console.error("Error updating ticket status:", error);
