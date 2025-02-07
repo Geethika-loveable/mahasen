@@ -17,6 +17,8 @@ interface TicketStatusProps {
 
 export const TicketStatus = ({ status, isUpdating, onStatusChange }: TicketStatusProps) => {
   return (
+    <div className="space-y-2">
+      <h4 className="font-medium">Priority</h4>
     <div className="flex items-center gap-2">
       <Badge variant="secondary" className={statusColors[status]}>
         {status}
@@ -33,5 +35,6 @@ export const TicketStatus = ({ status, isUpdating, onStatusChange }: TicketStatu
         </SelectContent>
       </Select>
     </div>
+  </div>
   );
 };
