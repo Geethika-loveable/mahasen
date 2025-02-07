@@ -14,8 +14,8 @@ interface TicketAssignmentProps {
 
 export const TicketAssignment = ({ assignedTo, isUpdating, onAssignmentChange }: TicketAssignmentProps) => {
   return (
-    <div className="space-y-2">
-      <h4 className="font-medium">Assigned To</h4>
+    <div className="space-y-2 text-gray-700 dark:text-gray-400">
+      <h4 className="font-medium ">Assigned To</h4>
       <Select 
         value={assignedTo || "unassigned"} 
         onValueChange={onAssignmentChange} 
