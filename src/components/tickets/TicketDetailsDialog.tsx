@@ -227,14 +227,7 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
                 onStatusChange={handleStatusChange} 
               />
             </div>
-
-            <div className="space-y-2">
-              <h4 className="font-medium">Description</h4>
-              <div className="border-2 border-green-500 rounded-lg p-4">
-                <p className="whitespace-pre-wrap">{ticket.body}</p>
-              </div>
-            </div>
-
+            
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">
                 <h4 className="font-medium">Customer</h4>
@@ -253,6 +246,15 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
                 </div>
               )}
             </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium">Description</h4>
+              <div className="border-2 border-green-500 rounded-lg p-4">
+                <p className="whitespace-pre-wrap">{ticket.body}</p>
+              </div>
+            </div>
+
+            
 
             {ticket.context && (
               <div className="space-y-2">
