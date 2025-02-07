@@ -9,7 +9,14 @@ export const useTicketUpdates = (ticket: Ticket | null, onClose: () => void) => 
   const { toast } = useToast();
 
   const handleStatusChange = async (newStatus: Ticket["status"]) => {
-    if (!ticket) return;
+    if (!ticket) {
+      toast({
+        title: "Error",
+        description: "No ticket selected",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsUpdating(true);
     try {
@@ -57,7 +64,14 @@ export const useTicketUpdates = (ticket: Ticket | null, onClose: () => void) => 
   };
 
   const handleAssignmentChange = async (newAssignedTo: string) => {
-    if (!ticket) return;
+    if (!ticket) {
+      toast({
+        title: "Error",
+        description: "No ticket selected",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsUpdating(true);
     try {
@@ -100,7 +114,14 @@ export const useTicketUpdates = (ticket: Ticket | null, onClose: () => void) => 
   };
 
   const handlePriorityChange = async (newPriority: TicketPriority) => {
-    if (!ticket) return;
+    if (!ticket) {
+      toast({
+        title: "Error",
+        description: "No ticket selected",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsUpdating(true);
     try {
@@ -149,3 +170,4 @@ export const useTicketUpdates = (ticket: Ticket | null, onClose: () => void) => 
     handlePriorityChange
   };
 };
+
