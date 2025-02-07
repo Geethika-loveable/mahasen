@@ -3,16 +3,41 @@ import { generateGroqSystemPrompt, generateGeminiIntentPrompt } from './prompts.
 import { GroqHandler } from './services/model-handlers/groq-handler.ts';
 import { GeminiHandler } from './services/model-handlers/gemini-handler.ts';
 import { TicketHandler } from './services/ticket-handler.ts';
+import { searchKnowledgeBase } from './services/knowledge-base.ts';
 
 export async function generateAIResponse(message: string, context: any, aiSettings: any): Promise<string> {
-  if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
-    return await generateGroqResponse(message, context, aiSettings);
-  } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
-    return await generateGeminiResponse(message, context, aiSettings);
-  } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
-    return await generateGroqResponse(message, context, aiSettings);
-  } else {
-    throw new Error('Invalid model specified');
+  try {
+    // Initialize Supabase AI Session for embeddings
+    const session = new Supabase.ai.Session('gte-small');
+    console.log('Generating embedding for user query...');
+    
+    const embedding = await session.run(message, {
+      mean_pool: true,
+      normalize: true,
+    });
+
+    // Search knowledge base with the embedding
+    const knowledgeBaseContext = await searchKnowledgeBase(embedding);
+    console.log('Knowledge base context:', knowledgeBaseContext);
+
+    // Update context with knowledge base results
+    const updatedContext = {
+      ...context,
+      knowledgeBase: knowledgeBaseContext || context.knowledgeBase || ''
+    };
+
+    if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
+      return await generateGroqResponse(message, updatedContext, aiSettings);
+    } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
+      return await generateGeminiResponse(message, updatedContext, aiSettings);
+    } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
+      return await generateGroqResponse(message, updatedContext, aiSettings);
+    } else {
+      throw new Error('Invalid model specified');
+    }
+  } catch (error) {
+    console.error('Error in generateAIResponse:', error);
+    throw error;
   }
 }
 
@@ -23,7 +48,7 @@ async function generateGroqResponse(message: string, context: any, aiSettings: a
   }
 
   const systemPrompt = generateGroqSystemPrompt({
-    knowledgeBase: context.knowledgeBase || '',
+    knowledgeBase: context.knowledgeBase,
     tone: aiSettings.tone,
     behaviour: aiSettings.behaviour || ''
   });
