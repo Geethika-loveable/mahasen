@@ -220,14 +220,7 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
           <div className="space-y-6 pb-6">
             <TicketHeader ticket={ticket} />
             
-            <div className="flex justify-end">
-              <TicketStatus 
-                status={status} 
-                isUpdating={isUpdating} 
-                onStatusChange={handleStatusChange} 
-              />
-            </div>
-            
+
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-[200px]">
                 <h4 className="font-medium">Customer</h4>
@@ -282,6 +275,12 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
                 priority={priority}
                 isUpdating={isUpdating}
                 onPriorityChange={handlePriorityChange}
+              />
+
+              <TicketStatus 
+                status={status} 
+                isUpdating={isUpdating} 
+                onStatusChange={handleStatusChange} 
               />
 
               <TicketAssignment
