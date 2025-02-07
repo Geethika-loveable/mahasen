@@ -10,9 +10,13 @@ export async function searchKnowledgeBase(query_embedding: string, threshold = 0
     console.log('Searching knowledge base with embedding...');
     
     const { data: matches, error } = await supabase.rpc('match_knowledge_base', {
+      query_text: '', // Empty string for query_text since we're using embedding
       query_embedding,
+      match_count: count,
+      full_text_weight: 0.1,
+      semantic_weight: 0.9,
       match_threshold: threshold,
-      match_count: count
+      rrf_k: 60
     });
 
     if (error) {
