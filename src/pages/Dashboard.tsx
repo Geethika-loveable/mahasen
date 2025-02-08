@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageSquare, Facebook, Instagram, FileText, Network, Ticket } from "lucide-react";
+import { MessageSquare, Facebook, Instagram, Network, Ticket } from "lucide-react";
 import { PlatformCard } from "@/components/dashboard/PlatformCard";
 import { UtilityCard } from "@/components/dashboard/UtilityCard";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -37,6 +38,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [isDevMode, setIsDevMode] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -71,6 +73,14 @@ const Dashboard = () => {
     navigate("/login");
   };
 
+  const filteredPlatforms = isDevMode
+    ? platforms.filter(p => p.id === "whatsapp")
+    : platforms;
+
+  const filteredUtilityCards = isDevMode
+    ? ["tickets"]
+    : ["tickets", "agent-flow"];
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -78,10 +88,11 @@ const Dashboard = () => {
           userName={userName}
           onNavigate={navigate}
           onSignOut={handleSignOut}
+          onDevModeChange={setIsDevMode}
         />
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {platforms.map((platform) => (
+          {filteredPlatforms.map((platform) => (
             <PlatformCard
               key={platform.id}
               {...platform}
@@ -94,26 +105,6 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <UtilityCard
-            icon={FileText}
-            title="Knowledge Base"
-            description="Manage your uploaded files and documents"
-            buttonText="Manage Files"
-            onClick={() => navigate("/knowledge-base")}
-            colorClass="text-purple-600"
-            bgColorClass="bg-purple-50 dark:bg-purple-950/20"
-          />
-
-          <UtilityCard
-            icon={Network}
-            title="Agent Flow"
-            description="Design and manage your agent workflows"
-            buttonText="Setup Agents"
-            onClick={() => navigate("/agent-flow")}
-            colorClass="text-indigo-600"
-            bgColorClass="bg-indigo-50 dark:bg-indigo-950/20"
-          />
-
-          <UtilityCard
             icon={Ticket}
             title="Tickets"
             description="Manage customer support tickets"
@@ -122,6 +113,18 @@ const Dashboard = () => {
             colorClass="text-orange-600"
             bgColorClass="bg-orange-50 dark:bg-orange-950/20"
           />
+
+          {!isDevMode && (
+            <UtilityCard
+              icon={Network}
+              title="Agent Flow"
+              description="Design and manage your agent workflows"
+              buttonText="Setup Agents"
+              onClick={() => navigate("/agent-flow")}
+              colorClass="text-indigo-600"
+              bgColorClass="bg-indigo-50 dark:bg-indigo-950/20"
+            />
+          )}
         </div>
       </div>
     </div>
