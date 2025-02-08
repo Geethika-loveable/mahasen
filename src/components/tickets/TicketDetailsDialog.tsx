@@ -54,8 +54,8 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden">
-        <DialogHeader className="flex flex-row items-center justify-between">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] p-4 md:p-6 overflow-hidden">
+        <DialogHeader className="flex flex-row items-center justify-between p-0 mb-4">
           <DialogTitle className="text-xl font-semibold">Ticket #{ticket.id}</DialogTitle>
           <Button
             onClick={handleMarkComplete}
@@ -67,8 +67,8 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
           </Button>
         </DialogHeader>
         
-        <ScrollArea className="h-full pr-4">
-          <div className="space-y-6 pb-6">
+        <ScrollArea className={`${isOpen ? 'h-[calc(90vh-120px)]' : 'h-auto max-h-[70vh]'} pr-4`}>
+          <div className="space-y-4">
             <TicketHeader ticket={ticket} />
             
             <TicketContent ticket={ticket} />
@@ -82,11 +82,12 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
 
             <hr className="border-gray-200 dark:border-gray-700" />
             
-            <Collapsible open={isOpen}
-            onOpenChange={setIsOpen}
-            className="w-full space-y-2">
-   
-              <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg bg-white px-4 py-2 font-medium hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800">
+            <Collapsible 
+              open={isOpen}
+              onOpenChange={setIsOpen}
+              className="w-full space-y-2"
+            >
+              <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg bg-white px-4 py-2 font-medium hover:bg-slate-50 dark:bg-slate-950 dark:hover:bg-slate-800">
                 <span className="text-sm">
                   {isOpen ? "Show Less" : "Show More"}
                 </span>
@@ -94,19 +95,19 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
                   className={`h-4 w-4 transition-transform duration-200 ${
                     isOpen ? "rotate-180" : ""
                   }`}
-                  />
-              </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2">
-              <div className="rounded-md bg-slate-50 px-4 py-3 dark:bg-slate-900">
-              <TicketMetadata
-                ticket={ticket}
-                isUpdating={isUpdating}
-                onPriorityChange={handlePriorityChange}
-                onAssignmentChange={handleAssignmentChange}
-                onStatusChange={handleStatusChange}
                 />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2">
+                <div className="rounded-md bg-slate-50 px-4 py-3 dark:bg-slate-900">
+                  <TicketMetadata
+                    ticket={ticket}
+                    isUpdating={isUpdating}
+                    onPriorityChange={handlePriorityChange}
+                    onAssignmentChange={handleAssignmentChange}
+                    onStatusChange={handleStatusChange}
+                  />
                 </div>
-                </CollapsibleContent>
+              </CollapsibleContent>
             </Collapsible>
           </div>
         </ScrollArea>

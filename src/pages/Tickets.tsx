@@ -58,14 +58,14 @@ const Tickets = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <TicketHeader 
           onBackClick={() => navigate("/dashboard")} 
           onAddClick={() => setDialogOpen(true)}
         />
 
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow overflow-hidden">
           <TicketList 
             tickets={tickets}
             loading={loading}
