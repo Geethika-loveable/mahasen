@@ -3,6 +3,13 @@ import { Ticket } from "@/types/ticket";
 import { TicketPrioritySection } from "./TicketPriority";
 import { TicketAssignment } from "./TicketAssignment";
 import { TicketStatus } from "./TicketStatus";
+import { 
+  Collapsible, 
+  CollapsibleContent, 
+  CollapsibleTrigger 
+} from "@/components/ui/collapsible";
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface TicketMetadataProps {
   ticket: Ticket;
@@ -19,6 +26,14 @@ export const TicketMetadata = ({
   onAssignmentChange,
   onStatusChange
 }: TicketMetadataProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Function to get first two lines of text
+  const getFirstTwoLines = (text: string) => {
+    const lines = text.split('\n');
+    return lines.slice(0, 2).join('\n');
+  };
+
   return (
     <div className="space-y-4 text-gray-500 dark:text-gray-400">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -45,6 +60,39 @@ export const TicketMetadata = ({
         <div className="space-y-2">
           <h4 className="font-medium">Confidence Score</h4>
           <p>{(ticket.confidence_score * 100).toFixed(1)}%</p>
+        </div>
+      )}
+
+      {ticket.context && (
+        <div className="space-y-2">
+          <h4 className="font-medium">Conversation Context</h4>
+          <Collapsible
+            open={isOpen}
+            onOpenChange={setIsOpen}
+            className="w-full space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <CollapsibleTrigger className="group flex w-full items-center justify-between rounded-lg border bg-white px-4 py-2 font-medium hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800">
+                <span className="text-sm">
+                  {isOpen ? "Show Less" : "Show More"}
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-200 ${
+                    isOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </CollapsibleTrigger>
+            </div>
+            <div className="rounded-md border px-4 py-3 font-mono text-sm">
+              <p className="whitespace-pre-wrap">
+                {isOpen ? ticket.context : getFirstTwoLines(ticket.context)}
+              </p>
+            </div>
+            <CollapsibleContent className="space-y-2">
+              <div className="rounded-md bg-slate-50 px-4 py-3 font-mono text-sm dark:bg-slate-900">
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       )}
     </div>
