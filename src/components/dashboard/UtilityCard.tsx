@@ -26,7 +26,7 @@ export const UtilityCard = ({
   useShine = false,
 }: UtilityCardProps) => {
   const content = (
-    <Card className="p-6 cursor-pointer transition-all duration-200 hover:shadow-lg border-2 border-transparent dark:bg-slate-900">
+    <Card className="w-full p-6 cursor-pointer transition-all duration-200 hover:shadow-lg border-2 border-transparent dark:bg-slate-900">
       <div className={`rounded-full w-12 h-12 ${bgColorClass} ${colorClass} flex items-center justify-center mb-4`}>
         <Icon className="h-6 w-6" />
       </div>
@@ -44,9 +44,11 @@ export const UtilityCard = ({
 
   if (useShine) {
     return (
-      <ShineBorder color={["#A07CFE", "#FE8FB5", "#FFBE7B"]}>
-        {content}
-      </ShineBorder>
+      <div className="w-full">
+        <ShineBorder color={["#A07CFE", "#FE8FB5", "#FFBE7B"]}>
+          {content}
+        </ShineBorder>
+      </div>
     );
   }
 

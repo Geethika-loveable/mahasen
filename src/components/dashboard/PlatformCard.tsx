@@ -31,7 +31,7 @@ export const PlatformCard = ({
 }: PlatformCardProps) => {
   const content = (
     <Card
-      className={`p-6 cursor-pointer transition-all duration-200 hover:shadow-lg border-2 ${
+      className={`w-full p-6 cursor-pointer transition-all duration-200 hover:shadow-lg border-2 ${
         isSelected ? borderColor : "border-transparent"
       } dark:bg-slate-900`}
       onClick={() => onSelect(id)}
@@ -53,9 +53,11 @@ export const PlatformCard = ({
 
   if (useShine) {
     return (
-      <ShineBorder color={["#A07CFE", "#FE8FB5", "#FFBE7B"]}>
-        {content}
-      </ShineBorder>
+      <div className="w-full">
+        <ShineBorder color={["#A07CFE", "#FE8FB5", "#FFBE7B"]}>
+          {content}
+        </ShineBorder>
+      </div>
     );
   }
 
