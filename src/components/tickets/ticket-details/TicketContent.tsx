@@ -56,13 +56,6 @@ export const TicketContent = ({ ticket }: TicketContentProps) => {
         </div>
       )}
 
-      {ticket.confidence_score !== undefined && (
-        <div className="space-y-2">
-          <h4 className="font-medium">Confidence Score</h4>
-          <p>{(ticket.confidence_score * 100).toFixed(1)}%</p>
-        </div>
-      )}
-
       {ticket.context && (
         <div className="space-y-2">
           <h4 className="font-medium">Conversation Context</h4>
