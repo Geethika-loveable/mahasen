@@ -31,35 +31,16 @@ export async function storeConversation(supabase: any, userId: string, userName:
       conversationId = conversation.id;
     }
 
-    // First check if messages already exist
-    const { data: existingMessages } = await supabase
-      .from('messages')
-      .select('id')
-      .eq('conversation_id', conversationId)
-      .eq('content', userMessage)
-      .single();
+    // Only insert AI response message since user message is already stored
+    const { error: msgError } = await supabase.from('messages').insert({
+      conversation_id: conversationId,
+      content: aiResponse,
+      status: 'sent',
+      sender_name: 'AI Assistant',
+      sender_number: 'system'
+    });
 
-    if (!existingMessages) {
-      // Only insert messages if they don't exist
-      const { error: msgError } = await supabase.from('messages').insert([
-        {
-          conversation_id: conversationId,
-          content: userMessage,
-          status: 'received',
-          sender_name: userName,
-          sender_number: userId
-        },
-        {
-          conversation_id: conversationId,
-          content: aiResponse,
-          status: 'sent',
-          sender_name: 'AI Assistant',
-          sender_number: 'system'
-        }
-      ]);
-
-      if (msgError) throw msgError;
-    }
+    if (msgError) throw msgError;
     
     return conversationId;
   } catch (error) {
