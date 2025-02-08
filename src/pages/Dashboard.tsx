@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,6 +89,7 @@ const Dashboard = () => {
               description={`Manage your ${platform.name} conversations`}
               isSelected={selectedPlatform === platform.id}
               onSelect={handlePlatformSelect}
+              useShine={platform.id === "whatsapp"}
             />
           ))}
         </div>
@@ -101,6 +103,7 @@ const Dashboard = () => {
             onClick={() => navigate("/knowledge-base")}
             colorClass="text-purple-600"
             bgColorClass="bg-purple-50 dark:bg-purple-950/20"
+            useShine={true}
           />
 
           <UtilityCard
@@ -121,6 +124,7 @@ const Dashboard = () => {
             onClick={() => navigate("/tickets")}
             colorClass="text-orange-600"
             bgColorClass="bg-orange-50 dark:bg-orange-950/20"
+            useShine={true}
           />
         </div>
       </div>
