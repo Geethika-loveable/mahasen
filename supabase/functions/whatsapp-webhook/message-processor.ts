@@ -44,6 +44,18 @@ export async function processWhatsAppMessage(
 
     console.log('Found conversation:', conversation);
 
+    // Check if message with this WhatsApp ID already exists
+    const { data: existingMessage } = await supabase
+      .from("messages")
+      .select("id")
+      .eq("whatsapp_message_id", whatsappMessageId)
+      .single();
+
+    if (existingMessage) {
+      console.log('Message already exists, skipping processing:', whatsappMessageId);
+      return;
+    }
+
     // Create a message record with our own UUID
     const { data: messageData, error: messageError } = await supabase
       .from("messages")
