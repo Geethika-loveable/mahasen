@@ -9,13 +9,14 @@ import { useNavigate } from "react-router-dom";
 import { Ticket } from "@/types/ticket";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TicketHeader } from "./ticket-details/TicketHeader";
-import { TicketStatus } from "./ticket-details/TicketStatus";
 import { TicketContent } from "./ticket-details/TicketContent";
 import { TicketHistory } from "./ticket-details/TicketHistory";
 import { TicketActions } from "./ticket-details/TicketActions";
 import { TicketMetadata } from "./ticket-details/TicketMetadata";
 import { useTicketUpdates } from "./ticket-details/useTicketUpdates";
 import { useTicketHistory } from "./ticket-details/useTicketHistory";
+import { Button } from "@/components/ui/button";
+import { CheckCircle } from "lucide-react";
 
 interface TicketDetailsDialogProps {
   ticket: Ticket | null;
@@ -36,25 +37,31 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
     }
   };
 
+  const handleMarkComplete = () => {
+    handleStatusChange('Completed');
+  };
+
   if (!ticket) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-semibold">Ticket #{ticket.id}</DialogTitle>
+          <Button
+            onClick={handleMarkComplete}
+            disabled={isUpdating || ticket.status === 'Completed'}
+            className="bg-green-500 hover:bg-green-600"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Mark Complete
+          </Button>
         </DialogHeader>
         
         <ScrollArea className="h-full pr-4">
           <div className="space-y-6 pb-6">
             <TicketHeader ticket={ticket} />
             
-            <TicketStatus 
-              status={ticket.status} 
-              isUpdating={isUpdating} 
-              onStatusChange={handleStatusChange} 
-            />
-
             <TicketContent ticket={ticket} />
             
             <TicketHistory history={ticketHistory} />
@@ -71,6 +78,7 @@ export const TicketDetailsDialog = ({ ticket, open, onOpenChange }: TicketDetail
               isUpdating={isUpdating}
               onPriorityChange={handlePriorityChange}
               onAssignmentChange={handleAssignmentChange}
+              onStatusChange={handleStatusChange}
             />
           </div>
         </ScrollArea>

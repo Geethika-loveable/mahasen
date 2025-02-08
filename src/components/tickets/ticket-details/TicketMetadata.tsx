@@ -2,23 +2,32 @@
 import { Ticket } from "@/types/ticket";
 import { TicketPrioritySection } from "./TicketPriority";
 import { TicketAssignment } from "./TicketAssignment";
+import { TicketStatus } from "./TicketStatus";
 
 interface TicketMetadataProps {
   ticket: Ticket;
   isUpdating: boolean;
   onPriorityChange: (priority: "LOW" | "MEDIUM" | "HIGH") => void;
   onAssignmentChange: (assignedTo: string) => void;
+  onStatusChange: (status: Ticket["status"]) => void;
 }
 
 export const TicketMetadata = ({ 
   ticket,
   isUpdating,
   onPriorityChange,
-  onAssignmentChange
+  onAssignmentChange,
+  onStatusChange
 }: TicketMetadataProps) => {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <TicketStatus 
+          status={ticket.status} 
+          isUpdating={isUpdating} 
+          onStatusChange={onStatusChange}
+        />
+
         <TicketPrioritySection
           priority={ticket.priority}
           isUpdating={isUpdating}
