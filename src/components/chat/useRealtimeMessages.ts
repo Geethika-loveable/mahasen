@@ -25,7 +25,7 @@ export const useRealtimeMessages = (
           table: 'messages',
           filter: `conversation_id=eq.${id}`
         },
-        (payload) => {
+        async (payload) => {
           console.log("Received real-time update:", payload);
           
           // Handle different event types
@@ -38,7 +38,10 @@ export const useRealtimeMessages = (
                 // Only add if message doesn't already exist
                 const messageExists = oldData.some(msg => msg.id === payload.new.id);
                 if (!messageExists) {
-                  toast.success('New message received');
+                  // If it's a received message, mark it as unread
+                  if (payload.new.status === 'received') {
+                    toast.success('New message received');
+                  }
                   return [...oldData, payload.new];
                 }
                 return oldData;
@@ -54,7 +57,9 @@ export const useRealtimeMessages = (
                 );
               }
             );
-            toast.info('Message updated');
+            if (payload.old.read === false && payload.new.read === true) {
+              console.log('Message marked as read:', payload.new.id);
+            }
           }
         }
       )
@@ -72,6 +77,26 @@ export const useRealtimeMessages = (
           }, 5000);
         }
       });
+
+    // Mark messages as read when entering the chat
+    const markMessagesAsRead = async () => {
+      try {
+        const { error } = await supabase
+          .from("messages")
+          .update({ read: true })
+          .eq("conversation_id", id)
+          .eq("status", "received")
+          .eq("read", false);
+
+        if (error) {
+          console.error("Error marking messages as read:", error);
+        }
+      } catch (error) {
+        console.error("Error in markMessagesAsRead:", error);
+      }
+    };
+
+    markMessagesAsRead();
 
     // Cleanup subscription on unmount
     return () => {

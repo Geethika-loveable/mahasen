@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 type Platform = Database["public"]["Enums"]["platform_type"];
 const validPlatforms: Platform[] = ["whatsapp", "facebook", "instagram"];
@@ -34,26 +36,37 @@ const PlatformChats = () => {
   useEffect(() => {
     if (!isValidPlatform(platform)) return;
 
+    console.log('Setting up real-time subscription for messages');
+
     const channel = supabase
       .channel('messages-updates')
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
-          table: 'messages',
-          filter: platform ? `platform=eq.${platform}` : undefined
+          table: 'messages'
         },
-        () => {
+        (payload) => {
+          console.log('Received real-time update:', payload);
+          
           // Immediately invalidate and refetch conversations
           queryClient.invalidateQueries({ 
             queryKey: ["conversations", platform],
             exact: true
           });
+
+          // Show notification for new messages
+          if (payload.eventType === 'INSERT' && payload.new.status === 'received') {
+            toast.success(`New message from ${payload.new.sender_name}`);
+          }
         }
       )
       .subscribe((status) => {
         console.log("Subscription status:", status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to messages updates');
+        }
       });
 
     return () => {
@@ -76,7 +89,8 @@ const PlatformChats = () => {
           *,
           messages:messages (
             created_at,
-            read
+            read,
+            status
           )
         `)
         .eq("platform", platform);
@@ -92,9 +106,12 @@ const PlatformChats = () => {
             : latest;
         }, null);
 
+        // Check for unread messages that are received (from user)
+        const hasUnread = messages.some((msg: any) => !msg.read && msg.status === 'received');
+
         return {
           ...conversation,
-          has_unread: messages.some((msg: any) => !msg.read && msg.status === 'received'),
+          has_unread: hasUnread,
           latest_message_time: latestMessage ? latestMessage.created_at : conversation.created_at
         };
       });
