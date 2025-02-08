@@ -49,6 +49,20 @@ export const TicketContent = ({ ticket }: TicketContentProps) => {
         </div>
       </div>
 
+      {ticket.escalation_reason && (
+        <div className="space-y-2">
+          <h4 className="font-medium">Escalation Reason</h4>
+          <p>{ticket.escalation_reason}</p>
+        </div>
+      )}
+
+      {ticket.confidence_score !== undefined && (
+        <div className="space-y-2">
+          <h4 className="font-medium">Confidence Score</h4>
+          <p>{(ticket.confidence_score * 100).toFixed(1)}%</p>
+        </div>
+      )}
+
       {ticket.context && (
         <div className="space-y-2">
           <h4 className="font-medium">Conversation Context</h4>
@@ -79,13 +93,6 @@ export const TicketContent = ({ ticket }: TicketContentProps) => {
               </div>
             </CollapsibleContent>
           </Collapsible>
-        </div>
-      )}
-
-      {ticket.escalation_reason && (
-        <div className="space-y-2">
-          <h4 className="font-medium">Escalation Reason</h4>
-          <p>{ticket.escalation_reason}</p>
         </div>
       )}
     </div>
