@@ -35,7 +35,7 @@ export const TicketMetadata = ({
   };
 
   return (
-    <div className="space-y-4 text-gray-500 dark:text-gray-400">
+    <div className="space-y-4 text-gray-600 dark:text-gray-300">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         <TicketStatus 
           status={ticket.status} 
