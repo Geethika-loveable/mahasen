@@ -1,62 +1,14 @@
-
 import { Button } from "@/components/ui/button";
-import { Settings, Eye, EyeOff } from "lucide-react";
+import { FileText, Network, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardHeaderProps {
   userName: string;
   onNavigate: (path: string) => void;
   onSignOut: () => void;
-  onDevModeChange: (isDevMode: boolean) => void;
 }
 
-export const DashboardHeader = ({ userName, onNavigate, onSignOut, onDevModeChange }: DashboardHeaderProps) => {
-  const [isDevMode, setIsDevMode] = useState(false);
-
-  useEffect(() => {
-    const fetchUserPreferences = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from('user_preferences')
-        .select('ui_mode')
-        .eq('user_id', user.id)
-        .single();
-
-      if (data) {
-        setIsDevMode(data.ui_mode === 'dev');
-        onDevModeChange(data.ui_mode === 'dev');
-      } else {
-        // Create default preferences if none exist
-        await supabase.from('user_preferences').insert({
-          user_id: user.id,
-          ui_mode: 'full'
-        });
-      }
-    };
-
-    fetchUserPreferences();
-  }, []);
-
-  const toggleDevMode = async () => {
-    const newMode = !isDevMode;
-    setIsDevMode(newMode);
-    onDevModeChange(newMode);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from('user_preferences')
-      .upsert({
-        user_id: user.id,
-        ui_mode: newMode ? 'dev' : 'full'
-      });
-  };
-
+export const DashboardHeader = ({ userName, onNavigate, onSignOut }: DashboardHeaderProps) => {
   return (
     <div className="flex justify-between items-center mb-8">
       <div>
@@ -66,20 +18,19 @@ export const DashboardHeader = ({ userName, onNavigate, onSignOut, onDevModeChan
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
-          onClick={toggleDevMode}
+          onClick={() => onNavigate("/knowledge-base")}
           className="flex items-center gap-2"
         >
-          {isDevMode ? (
-            <>
-              <EyeOff className="h-4 w-4" />
-              Hide Dev Mode
-            </>
-          ) : (
-            <>
-              <Eye className="h-4 w-4" />
-              Dev Mode
-            </>
-          )}
+          <FileText className="h-4 w-4" />
+          Manage Files
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => onNavigate("/agent-flow")}
+          className="flex items-center gap-2"
+        >
+          <Network className="h-4 w-4" />
+          Agent Flow
         </Button>
         <Button
           variant="outline"
