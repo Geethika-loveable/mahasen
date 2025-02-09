@@ -34,9 +34,8 @@ export const Navigation = () => {
               Get Started
             </Button>
             <Button 
-              variant="ghost"
               onClick={() => navigate("/login")}
-              className="text-foreground"
+              className="text-primary-foreground"
             >
               Sign In
             </Button>
