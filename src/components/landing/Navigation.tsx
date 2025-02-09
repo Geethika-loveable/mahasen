@@ -33,9 +33,17 @@ export const Navigation = () => {
             >
               Try on WhatsApp
             </Button>
+            <Button 
+              variant="ghost"
+              onClick={() => navigate("/login")}
+              className="text-foreground"
+            >
+              Sign In
+            </Button>
           </div>
         </div>
       </div>
     </nav>
   );
 };
+
