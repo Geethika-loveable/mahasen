@@ -31,7 +31,7 @@ export const Navigation = () => {
               onClick={() => window.open("https://wa.me/message/TTJHEFNWX2KKF1", "_blank")}
               className="text-primary-foreground"
             >
-              Try on WhatsApp
+              Get Started
             </Button>
             <Button 
               variant="ghost"
@@ -46,4 +46,3 @@ export const Navigation = () => {
     </nav>
   );
 };
-
