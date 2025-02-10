@@ -153,16 +153,22 @@ const Pricing = () => {
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <Badge variant="outline" className="mb-4">
-              <AnimatedGradientText>
-                <span className={cn(
-                  "inline-flex items-center animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent"
-                )}>
-                  Elevate your Business
-                  <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
-                </span>
-              </AnimatedGradientText>
-            </Badge>
+            <div className="relative z-10 mb-4 inline-block">
+              <Badge variant="outline" className="p-0">
+                <AnimatedGradientText>
+                  <span className={cn(
+                    "inline-flex items-center px-4 py-1",
+                    "bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40]",
+                    "bg-clip-text text-transparent",
+                    "font-medium"
+                  )}>
+                    Elevate your Business
+                    <ChevronRight className="ml-1 h-4 w-4 text-[#9c40ff] transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+                  </span>
+                </AnimatedGradientText>
+              </Badge>
+            </div>
+            
             <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
               Simple, Transparent Pricing
             </h1>
