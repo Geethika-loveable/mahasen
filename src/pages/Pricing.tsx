@@ -3,6 +3,7 @@ import { Navigation } from "@/components/landing/Navigation";
 import { Footer } from "@/components/landing/Footer";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const PricingCard = ({
   title,
@@ -52,18 +53,21 @@ const PricingCard = ({
 );
 
 const Pricing = () => {
+  const [isAnnual, setIsAnnual] = useState(false);
+
   const plans = [
     {
       title: "Starter",
-      price: "$29",
+      price: isAnnual ? "$13" : "$17",
       description: "Perfect for small businesses just getting started",
       features: [
         "Up to 500 messages/month",
         "2 social media platforms",
         "Basic AI responses",
         "Email support",
-        "1 team member"
-      ]
+        "1 team member",
+        isAnnual ? "Save $48 annually" : undefined
+      ].filter(Boolean) as string[]
     },
     {
       title: "Professional",
@@ -102,9 +106,34 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-            <p className="text-xl text-muted-foreground">
+            <p className="text-xl text-muted-foreground mb-8">
               Choose the plan that's right for your business
             </p>
+            <div className="flex items-center justify-center gap-3 mb-8">
+              <span className={`text-sm ${!isAnnual ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
+                Monthly
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setIsAnnual(!isAnnual)}
+                className="relative"
+              >
+                <div
+                  className={`w-11 h-6 bg-primary rounded-full p-1 transition-all duration-200 ease-in-out ${
+                    isAnnual ? "bg-opacity-100" : "bg-opacity-50"
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                      isAnnual ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </div>
+              </Button>
+              <span className={`text-sm ${isAnnual ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>
+                Annual (Save 23%)
+              </span>
+            </div>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan, index) => (
