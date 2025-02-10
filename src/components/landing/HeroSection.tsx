@@ -13,7 +13,7 @@ export const HeroSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-8">
         <div className="text-center space-y-4">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-foreground">
-            Intelligent Customer Support
+          Intelligent Support & Order Management
           </h2>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
            <Cover>‎ Mahasen AI ‎ </Cover>
