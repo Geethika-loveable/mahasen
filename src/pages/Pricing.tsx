@@ -1,12 +1,13 @@
-
 import { Navigation } from "@/components/landing/Navigation";
 import { Footer } from "@/components/landing/Footer";
-import { Check, X } from "lucide-react";
+import { Check, X, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tooltip } from "@/components/ui/tooltip";
+import { AnimatedGradientText } from "@/components/magicui/animated-gradient-text";
+import { cn } from "@/lib/utils";
 
 const PricingCard = ({
   title,
@@ -153,7 +154,14 @@ const Pricing = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">
-              Pricing
+              <AnimatedGradientText>
+                <span className={cn(
+                  "inline-flex items-center animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent"
+                )}>
+                  Elevate your Business
+                  <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
+                </span>
+              </AnimatedGradientText>
             </Badge>
             <h1 className="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
               Simple, Transparent Pricing
