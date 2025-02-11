@@ -261,6 +261,7 @@ export type Database = {
           assigned_to: string | null
           body: string
           confidence_score: number | null
+          confirmation_message_id: string | null
           context: string | null
           conversation_id: string | null
           created_at: string
@@ -270,8 +271,10 @@ export type Database = {
           intent_type: string | null
           last_updated_at: string | null
           message_id: string | null
+          order_status: string | null
           platform: Database["public"]["Enums"]["platform_type"]
           priority: string | null
+          product_info: Json | null
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
@@ -280,6 +283,7 @@ export type Database = {
           assigned_to?: string | null
           body: string
           confidence_score?: number | null
+          confirmation_message_id?: string | null
           context?: string | null
           conversation_id?: string | null
           created_at?: string
@@ -289,8 +293,10 @@ export type Database = {
           intent_type?: string | null
           last_updated_at?: string | null
           message_id?: string | null
+          order_status?: string | null
           platform: Database["public"]["Enums"]["platform_type"]
           priority?: string | null
+          product_info?: Json | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
@@ -299,6 +305,7 @@ export type Database = {
           assigned_to?: string | null
           body?: string
           confidence_score?: number | null
+          confirmation_message_id?: string | null
           context?: string | null
           conversation_id?: string | null
           created_at?: string
@@ -308,8 +315,10 @@ export type Database = {
           intent_type?: string | null
           last_updated_at?: string | null
           message_id?: string | null
+          order_status?: string | null
           platform?: Database["public"]["Enums"]["platform_type"]
           priority?: string | null
+          product_info?: Json | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           type?: string
