@@ -1,4 +1,6 @@
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
 export class IntentProcessor {
   private static readonly DEFAULT_CONFIG = {
     confidence_threshold: 0.7,
@@ -53,6 +55,8 @@ export class IntentProcessor {
   }
 
   static async processOrderInfo(orderInfo: any, message?: string, conversationId?: string): Promise<any> {
+    console.log('Processing order info:', { orderInfo, message, conversationId });
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -60,6 +64,7 @@ export class IntentProcessor {
 
     // If there's no existing order info, create initial state
     if (!orderInfo) {
+      console.log('No existing order info, creating initial state');
       return {
         product: null,
         quantity: 1,
@@ -70,6 +75,8 @@ export class IntentProcessor {
 
     // Handle confirmation messages
     if (message && this.isConfirmationMessage(message) && conversationId) {
+      console.log('Processing confirmation message for conversation:', conversationId);
+      
       // Check for pending order in the tickets table
       const { data: pendingOrder, error } = await supabase
         .from('tickets')
@@ -81,9 +88,13 @@ export class IntentProcessor {
         .limit(1)
         .single();
 
+      if (error) {
+        console.error('Error fetching pending order:', error);
+      }
+
       if (pendingOrder && !error) {
         console.log('Found pending order:', pendingOrder);
-        const productInfo = pendingOrder.product_info;
+        const productInfo = JSON.parse(pendingOrder.product_info);
         
         return {
           product: productInfo.product,
@@ -97,6 +108,7 @@ export class IntentProcessor {
 
     // If we have a product but haven't asked for confirmation yet
     if (orderInfo.product && orderInfo.state === 'COLLECTING_INFO') {
+      console.log('Product collected, moving to confirmation state');
       return {
         ...orderInfo,
         state: 'CONFIRMING',
