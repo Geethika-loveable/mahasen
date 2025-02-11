@@ -1,5 +1,14 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import type { IntentAnalysis } from "../types/intent.ts";
+
+interface OrderInfo {
+  product: string | null;
+  quantity: number;
+  state: 'COLLECTING_INFO' | 'CONFIRMING' | 'PROCESSING';
+  confirmed: boolean;
+  pendingOrderId?: number;
+}
 
 export class IntentProcessor {
   private static readonly DEFAULT_CONFIG = {
@@ -54,13 +63,12 @@ export class IntentProcessor {
     return this.CONFIRMATION_WORDS.includes(message.toLowerCase().trim());
   }
 
-  static async processOrderInfo(orderInfo: any, message?: string, conversationId?: string): Promise<any> {
+  static async processOrderInfo(orderInfo: OrderInfo | null, message?: string, conversationId?: string): Promise<OrderInfo> {
     console.log('Processing order info:', { orderInfo, message, conversationId });
     
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // If there's no existing order info, create initial state
     if (!orderInfo) {
@@ -77,32 +85,39 @@ export class IntentProcessor {
     if (message && this.isConfirmationMessage(message) && conversationId) {
       console.log('Processing confirmation message for conversation:', conversationId);
       
-      // Check for pending order in the tickets table
-      const { data: pendingOrder, error } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .eq('type', 'Order')
-        .eq('order_status', 'pending')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        // Check for pending order in the tickets table
+        const { data: pendingOrder, error } = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .eq('type', 'Order')
+          .eq('order_status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      if (error) {
-        console.error('Error fetching pending order:', error);
-      }
+        if (error) {
+          console.error('Error fetching pending order:', error);
+          throw error;
+        }
 
-      if (pendingOrder && !error) {
-        console.log('Found pending order:', pendingOrder);
-        const productInfo = JSON.parse(pendingOrder.product_info);
-        
-        return {
-          product: productInfo.product,
-          quantity: productInfo.quantity,
-          state: 'PROCESSING',
-          confirmed: true,
-          pendingOrderId: pendingOrder.id
-        };
+        if (pendingOrder) {
+          console.log('Found pending order:', pendingOrder);
+          const productInfo = typeof pendingOrder.product_info === 'string' 
+            ? JSON.parse(pendingOrder.product_info)
+            : pendingOrder.product_info;
+          
+          return {
+            product: productInfo.product,
+            quantity: productInfo.quantity,
+            state: 'PROCESSING',
+            confirmed: true,
+            pendingOrderId: pendingOrder.id
+          };
+        }
+      } catch (error) {
+        console.error('Error processing confirmation:', error);
       }
     }
 

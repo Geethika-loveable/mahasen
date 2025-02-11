@@ -3,7 +3,7 @@ import { IntentProcessor } from './intent-processor.ts';
 import { formatAIResponse, isValidAIResponse } from '../utils/aiResponseFormatter.ts';
 
 export class ResponseProcessor {
-  static async processAIResponse(rawResponse: string, userMessage?: string): Promise<any> {
+  static async processAIResponse(rawResponse: string, userMessage?: string, conversationId?: string): Promise<any> {
     try {
       console.log('Processing raw AI response:', rawResponse);
 
@@ -19,11 +19,17 @@ export class ResponseProcessor {
 
       // Process order info if present
       if (formattedResponse.intent === 'ORDER_PLACEMENT') {
-        formattedResponse.detected_entities.order_info = 
-          await IntentProcessor.processOrderInfo(
-            formattedResponse.detected_entities.order_info,
-            userMessage
-          );
+        try {
+          formattedResponse.detected_entities.order_info = 
+            await IntentProcessor.processOrderInfo(
+              formattedResponse.detected_entities.order_info,
+              userMessage,
+              conversationId
+            );
+        } catch (error) {
+          console.error('Error processing order info:', error);
+          return this.getDefaultResponse();
+        }
       }
 
       return formattedResponse;
