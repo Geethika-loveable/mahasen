@@ -1,3 +1,4 @@
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const supabase = createClient(
@@ -31,6 +32,11 @@ interface AutomatedTicketParams {
   platform: 'whatsapp' | 'facebook' | 'instagram';
   messageContent: string;
   context: string;
+  productInfo?: {
+    product: string;
+    quantity: number;
+    confirmed: boolean;
+  };
 }
 
 export class AutomatedTicketService {
@@ -54,7 +60,9 @@ export class AutomatedTicketService {
         confidence_score: params.analysis.confidence,
         escalation_reason: params.analysis.escalation_reason || undefined,
         priority: this.determinePriority(params.analysis),
-        status: 'New'
+        status: 'New',
+        product_info: params.productInfo ? JSON.stringify(params.productInfo) : null,
+        order_status: params.productInfo?.confirmed ? 'confirmed' : 'pending'
       };
 
       console.log('Attempting to create ticket with data:', ticketData);
