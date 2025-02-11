@@ -1,14 +1,6 @@
 
-import { IntentAnalysis } from '../types/intent.ts';
-
-interface IntentProcessorConfig {
-  confidence_threshold: number;
-  urgency_levels: string[];
-  intent_types: string[];
-}
-
 export class IntentProcessor {
-  private static readonly DEFAULT_CONFIG: IntentProcessorConfig = {
+  private static readonly DEFAULT_CONFIG = {
     confidence_threshold: 0.7,
     urgency_levels: ['high', 'medium', 'low'],
     intent_types: ['HUMAN_AGENT_REQUEST', 'SUPPORT_REQUEST', 'ORDER_PLACEMENT', 'GENERAL_QUERY']
@@ -60,7 +52,12 @@ export class IntentProcessor {
     return this.CONFIRMATION_WORDS.includes(message.toLowerCase().trim());
   }
 
-  static processOrderInfo(orderInfo: any, message?: string): any {
+  static async processOrderInfo(orderInfo: any, message?: string, conversationId?: string): Promise<any> {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
     // If there's no existing order info, create initial state
     if (!orderInfo) {
       return {
@@ -72,12 +69,28 @@ export class IntentProcessor {
     }
 
     // Handle confirmation messages
-    if (message && this.isConfirmationMessage(message)) {
-      if (orderInfo.state === 'CONFIRMING' && orderInfo.product) {
+    if (message && this.isConfirmationMessage(message) && conversationId) {
+      // Check for pending order in the tickets table
+      const { data: pendingOrder, error } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .eq('type', 'Order')
+        .eq('order_status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (pendingOrder && !error) {
+        console.log('Found pending order:', pendingOrder);
+        const productInfo = pendingOrder.product_info;
+        
         return {
-          ...orderInfo,
+          product: productInfo.product,
+          quantity: productInfo.quantity,
           state: 'PROCESSING',
-          confirmed: true
+          confirmed: true,
+          pendingOrderId: pendingOrder.id
         };
       }
     }
