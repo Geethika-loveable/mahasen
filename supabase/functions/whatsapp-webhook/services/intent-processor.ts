@@ -1,17 +1,14 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import type { IntentAnalysis } from "../types/intent.ts";
+import { IntentAnalysis } from '../types/intent.ts';
 
-interface OrderInfo {
-  product: string | null;
-  quantity: number;
-  state: 'COLLECTING_INFO' | 'CONFIRMING' | 'PROCESSING';
-  confirmed: boolean;
-  pendingOrderId?: number;
+interface IntentProcessorConfig {
+  confidence_threshold: number;
+  urgency_levels: string[];
+  intent_types: string[];
 }
 
 export class IntentProcessor {
-  private static readonly DEFAULT_CONFIG = {
+  private static readonly DEFAULT_CONFIG: IntentProcessorConfig = {
     confidence_threshold: 0.7,
     urgency_levels: ['high', 'medium', 'low'],
     intent_types: ['HUMAN_AGENT_REQUEST', 'SUPPORT_REQUEST', 'ORDER_PLACEMENT', 'GENERAL_QUERY']
@@ -63,16 +60,9 @@ export class IntentProcessor {
     return this.CONFIRMATION_WORDS.includes(message.toLowerCase().trim());
   }
 
-  static async processOrderInfo(orderInfo: OrderInfo | null, message?: string, conversationId?: string): Promise<OrderInfo> {
-    console.log('Processing order info:', { orderInfo, message, conversationId });
-    
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+  static processOrderInfo(orderInfo: any, message?: string): any {
     // If there's no existing order info, create initial state
     if (!orderInfo) {
-      console.log('No existing order info, creating initial state');
       return {
         product: null,
         quantity: 1,
@@ -82,48 +72,18 @@ export class IntentProcessor {
     }
 
     // Handle confirmation messages
-    if (message && this.isConfirmationMessage(message) && conversationId) {
-      console.log('Processing confirmation message for conversation:', conversationId);
-      
-      try {
-        // Check for pending order in the tickets table
-        const { data: pendingOrder, error } = await supabase
-          .from('tickets')
-          .select('*')
-          .eq('conversation_id', conversationId)
-          .eq('type', 'Order')
-          .eq('order_status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error) {
-          console.error('Error fetching pending order:', error);
-          throw error;
-        }
-
-        if (pendingOrder) {
-          console.log('Found pending order:', pendingOrder);
-          const productInfo = typeof pendingOrder.product_info === 'string' 
-            ? JSON.parse(pendingOrder.product_info)
-            : pendingOrder.product_info;
-          
-          return {
-            product: productInfo.product,
-            quantity: productInfo.quantity,
-            state: 'PROCESSING',
-            confirmed: true,
-            pendingOrderId: pendingOrder.id
-          };
-        }
-      } catch (error) {
-        console.error('Error processing confirmation:', error);
+    if (message && this.isConfirmationMessage(message)) {
+      if (orderInfo.state === 'CONFIRMING' && orderInfo.product) {
+        return {
+          ...orderInfo,
+          state: 'PROCESSING',
+          confirmed: true
+        };
       }
     }
 
     // If we have a product but haven't asked for confirmation yet
     if (orderInfo.product && orderInfo.state === 'COLLECTING_INFO') {
-      console.log('Product collected, moving to confirmation state');
       return {
         ...orderInfo,
         state: 'CONFIRMING',

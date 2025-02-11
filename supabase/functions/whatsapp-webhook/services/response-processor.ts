@@ -1,38 +1,33 @@
 
 import { IntentProcessor } from './intent-processor.ts';
-import { formatAIResponse, isValidAIResponse } from '../utils/aiResponseFormatter.ts';
 
 export class ResponseProcessor {
-  static async processAIResponse(rawResponse: string, userMessage?: string, conversationId?: string): Promise<any> {
+  static async processAIResponse(rawResponse: string, userMessage?: string): Promise<any> {
     try {
-      console.log('Processing raw AI response:', rawResponse);
+      let cleanedResponse = rawResponse
+        .replace(/<think>[\s\S]*?<\/think>/g, '')
+        .replace(/```json\n/g, '')
+        .replace(/```/g, '')
+        .trim();
 
-      // First attempt to format and validate the response
-      const formattedResponse = formatAIResponse(rawResponse);
-      
-      if (!isValidAIResponse(formattedResponse)) {
-        console.error('Invalid response structure after formatting:', formattedResponse);
+      const parsedResponse = JSON.parse(cleanedResponse);
+      console.log('Parsed AI response:', parsedResponse);
+
+      if (!IntentProcessor.validateIntentStructure(parsedResponse)) {
+        console.error('Invalid response structure:', parsedResponse);
         return this.getDefaultResponse();
       }
 
-      console.log('Formatted AI response:', formattedResponse);
-
       // Process order info if present
-      if (formattedResponse.intent === 'ORDER_PLACEMENT') {
-        try {
-          formattedResponse.detected_entities.order_info = 
-            await IntentProcessor.processOrderInfo(
-              formattedResponse.detected_entities.order_info,
-              userMessage,
-              conversationId
-            );
-        } catch (error) {
-          console.error('Error processing order info:', error);
-          return this.getDefaultResponse();
-        }
+      if (parsedResponse.intent === 'ORDER_PLACEMENT') {
+        parsedResponse.detected_entities.order_info = 
+          IntentProcessor.processOrderInfo(
+            parsedResponse.detected_entities.order_info,
+            userMessage
+          );
       }
 
-      return formattedResponse;
+      return parsedResponse;
     } catch (error) {
       console.error('Error processing AI response:', error);
       return this.getDefaultResponse();
