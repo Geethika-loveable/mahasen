@@ -1,3 +1,4 @@
+
 export function formatAIResponse(responseText: string): any {
   try {
     // Remove <think> tags and their content
@@ -6,25 +7,59 @@ export function formatAIResponse(responseText: string): any {
     // Remove ```json and ``` markers if they exist
     cleanedResponse = cleanedResponse.replace(/```json\n/g, '').replace(/```/g, '').trim();
     
+    // Handle potential string responses
+    if (!cleanedResponse.startsWith('{')) {
+      return {
+        response: cleanedResponse,
+        intent: 'GENERAL_QUERY',
+        confidence: 0.5,
+        requires_escalation: false,
+        escalation_reason: null,
+        detected_entities: {
+          product_mentions: [],
+          issue_type: null,
+          urgency_level: 'low',
+          order_info: null
+        }
+      };
+    }
+
     // Parse the JSON
     const parsedResponse = JSON.parse(cleanedResponse);
     
     console.log('Parsed AI response:', parsedResponse);
     
-    // If we just want to return the response text
-    if (parsedResponse.response) {
-      return parsedResponse;
+    // Ensure all required fields are present
+    if (!this.isValidAIResponse(parsedResponse)) {
+      console.error('Invalid response structure:', parsedResponse);
+      return this.getDefaultResponse();
     }
     
-    // Fallback to returning the full parsed response
     return parsedResponse;
   } catch (error) {
     console.error('Error formatting AI response:', error);
     console.log('Raw response:', responseText);
     
-    // Return a default response structure if parsing fails
+    return this.getDefaultResponse();
+  }
+
+  private static isValidAIResponse(response: any): boolean {
+    return (
+      response &&
+      typeof response === 'object' &&
+      typeof response.intent === 'string' &&
+      typeof response.confidence === 'number' &&
+      typeof response.requires_escalation === 'boolean' &&
+      typeof response.response === 'string' &&
+      typeof response.detected_entities === 'object' &&
+      typeof response.detected_entities.urgency_level === 'string' &&
+      Array.isArray(response.detected_entities.product_mentions)
+    );
+  }
+
+  private static getDefaultResponse() {
     return {
-      response: responseText,
+      response: "I apologize, but I received an invalid response format. Please try again.",
       intent: 'GENERAL_QUERY',
       confidence: 0.5,
       requires_escalation: false,
@@ -42,19 +77,16 @@ export function formatAIResponse(responseText: string): any {
 export function isValidAIResponse(response: any): boolean {
   return (
     response &&
+    typeof response === 'object' &&
     typeof response.intent === 'string' &&
     typeof response.confidence === 'number' &&
     typeof response.requires_escalation === 'boolean' &&
-    (response.escalation_reason === null || typeof response.escalation_reason === 'string') &&
-    response.detected_entities &&
     typeof response.response === 'string' &&
-    Array.isArray(response.detected_entities.product_mentions) &&
-    (response.detected_entities.issue_type === null || typeof response.detected_entities.issue_type === 'string') &&
-    ['low', 'medium', 'high'].includes(response.detected_entities.urgency_level)
+    typeof response.detected_entities === 'object' &&
+    typeof response.detected_entities.urgency_level === 'string'
   );
 }
 
-// Helper function to extract just the response text
 export function extractResponseText(parsedResponse: any): string {
   if (typeof parsedResponse === 'string') {
     return parsedResponse;
