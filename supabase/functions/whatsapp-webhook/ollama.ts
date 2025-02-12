@@ -1,15 +1,43 @@
-import { formatAIResponse, isValidAIResponse } from './utils/aiResponseFormatter.ts';
-import { AutomatedTicketService } from './automatedTicketService.ts';
+
+import { generateGroqSystemPrompt, generateGeminiIntentPrompt } from './prompts.ts';
+import { GroqHandler } from './services/model-handlers/groq-handler.ts';
+import { GeminiHandler } from './services/model-handlers/gemini-handler.ts';
+import { TicketHandler } from './services/ticket-handler.ts';
+import { searchKnowledgeBase } from './services/knowledge-base.ts';
 
 export async function generateAIResponse(message: string, context: any, aiSettings: any): Promise<string> {
-  if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
-    return await generateGroqResponse(message, context, aiSettings);
-  } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
-    return await generateGeminiResponse(message, context, aiSettings);
-  } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
-    return await generateGroqResponse(message, context, aiSettings);
-  } else {
-    throw new Error('Invalid model specified');
+  try {
+    // Initialize Supabase AI Session for embeddings
+    const session = new Supabase.ai.Session('gte-small');
+    console.log('Generating embedding for user query...');
+    
+    const embedding = await session.run(message, {
+      mean_pool: true,
+      normalize: true,
+    });
+
+    // Search knowledge base with the embedding
+    const knowledgeBaseContext = await searchKnowledgeBase(embedding);
+    console.log('Knowledge base context:', knowledgeBaseContext);
+
+    // Update context with knowledge base results
+    const updatedContext = {
+      ...context,
+      knowledgeBase: knowledgeBaseContext || context.knowledgeBase || ''
+    };
+
+    if (aiSettings.model_name === 'llama-3.3-70b-versatile') {
+      return await generateGroqResponse(message, updatedContext, aiSettings);
+    } else if (aiSettings.model_name === 'gemini-2.0-flash-exp') {
+      return await generateGeminiResponse(message, updatedContext, aiSettings);
+    } else if (aiSettings.model_name === 'deepseek-r1-distill-llama-70b') {
+      return await generateGroqResponse(message, updatedContext, aiSettings);
+    } else {
+      throw new Error('Invalid model specified');
+    }
+  } catch (error) {
+    console.error('Error in generateAIResponse:', error);
+    throw error;
   }
 }
 
@@ -19,180 +47,31 @@ async function generateGroqResponse(message: string, context: any, aiSettings: a
     throw new Error('GROQ_API_KEY is not set');
   }
 
-  const systemPrompt = `
-You are an AI assistant responsible for analyzing user intents and handling both support requests and orders.
-
-Intent Detection Guidelines:
-1. Identify explicit requests for human agents
-2. Detect order requests and collect order information
-3. Evaluate message urgency (high/medium/low)
-4. Detect support requests vs general queries
-5. Consider user frustration signals
-6. Use provided knowledge base context for informed decisions
-
-Order Processing Guidelines:
-1. For order requests:
-   - Extract product name
-   - Default quantity to 1 unless explicitly specified by the user
-   - Only ask for product name if missing
-   - Once product name is available, show order summary with quantity (default 1 or specified) and ask for confirmation
-   - Always ask user to confirm the order by typing "Yes", "Ow", or "ඔව්" 
-   - Accept confirmation only with "Yes", "Ow", or "ඔව්"
-   - After confirmation, create ticket with HIGH priority
-2. Order States:
-   - COLLECTING_INFO: when product missing
-   - CONFIRMING: showing order summary
-   - PROCESSING: confirmed, creating ticket
-   - COMPLETED: ticket created
-
-Escalation Criteria:
-- Explicit human agent requests
-- High urgency situations
-- Complex support needs
-- Low confidence in automated response
-- Multiple repeated queries
-- Technical issues requiring specialist knowledge
-
-Available Intent Types:
-- HUMAN_AGENT_REQUEST
-- SUPPORT_REQUEST
-- ORDER_PLACEMENT
-- GENERAL_QUERY
-
-Urgency Levels:
-- high: immediate attention needed, critical issues
-- medium: standard support requests
-- low: general inquiries
-
-Knowledge Base Context:
-${context.knowledgeBase || ''}
-
-Admin Settings:
-Tone: ${aiSettings.tone}
-${aiSettings.behaviour || ''}
-
-You MUST respond in the following JSON format:
-{
-  "intent": "HUMAN_AGENT_REQUEST" | "SUPPORT_REQUEST" | "ORDER_PLACEMENT" | "GENERAL_QUERY",
-  "confidence": 0.0-1.0,
-  "requires_escalation": boolean,
-  "escalation_reason": string | null,
-  "detected_entities": {
-    "product_mentions": string[],
-    "issue_type": string | null,
-    "urgency_level": "high" | "medium" | "low",
-    "order_info": {
-      "product": string | null,
-      "quantity": number,
-      "state": "COLLECTING_INFO" | "CONFIRMING" | "PROCESSING" | "COMPLETED",
-      "confirmed": boolean
-    }
-  },
-  "response": string
-}`;
+  const systemPrompt = generateGroqSystemPrompt({
+    knowledgeBase: context.knowledgeBase,
+    tone: aiSettings.tone,
+    behaviour: aiSettings.behaviour || ''
+  });
 
   try {
-    console.log('Sending request to Groq with context:', { message, context, aiSettings });
-    
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: aiSettings.model_name === 'deepseek-r1-distill-llama-70b' ? 'deepseek-r1-distill-llama-70b' : 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
+    const parsedResponse = await GroqHandler.generateResponse(
+      message,
+      systemPrompt,
+      GROQ_API_KEY,
+      aiSettings.model_name
+    );
+
+    const ticketResponse = await TicketHandler.handleTicketCreation(parsedResponse, {
+      messageId: context.messageId,
+      conversationId: context.conversationId,
+      userName: context.userName,
+      platform: 'whatsapp',
+      messageContent: message,
+      knowledgeBase: context.knowledgeBase
     });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Groq API error response:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorData
-      });
-      throw new Error(`Groq API responded with status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const responseText = data.choices[0].message.content.trim();
-    console.log('Raw LLM response:', responseText);
-    
-    const parsedResponse = formatAIResponse(responseText);
-    
-    if (!parsedResponse || !isValidAIResponse(parsedResponse)) {
-      console.error('Invalid response structure:', parsedResponse);
-      return "I apologize, but I received an invalid response format. Please try again.";
-    }
-
-    // Handle order processing
-    if (parsedResponse.intent === 'ORDER_PLACEMENT') {
-      // Ensure order_info exists and has default quantity of 1
-      if (!parsedResponse.detected_entities.order_info) {
-        parsedResponse.detected_entities.order_info = {
-          product: null,
-          quantity: 1,
-          state: 'COLLECTING_INFO',
-          confirmed: false
-        };
-      }
-      
-      // Set default quantity if not explicitly specified
-      if (!parsedResponse.detected_entities.order_info.quantity) {
-        parsedResponse.detected_entities.order_info.quantity = 1;
-      }
-      
-      const orderInfo = parsedResponse.detected_entities.order_info;
-      
-      if (orderInfo.state === 'PROCESSING' && orderInfo.confirmed) {
-        console.log('Creating order ticket...');
-        try {
-          const ticket = await AutomatedTicketService.generateTicket({
-            messageId: context.messageId,
-            conversationId: context.conversationId,
-            analysis: parsedResponse,
-            customerName: context.userName,
-            platform: 'whatsapp',
-            messageContent: `Order: ${orderInfo.product} x ${orderInfo.quantity}`,
-            context: `Product: ${orderInfo.product}\nQuantity: ${orderInfo.quantity}`
-          });
-
-          if (ticket) {
-            return `Your Order for ${orderInfo.product} for ${orderInfo.quantity} is placed successfully. Order Number is ${ticket.id}.`;
-          } else {
-            return "Order failed. Please retry with correct Product & Quantity in a bit.";
-          }
-        } catch (error) {
-          console.error('Error creating order ticket:', error);
-          return "Order failed. Please retry with correct Product & Quantity in a bit.";
-        }
-      }
-    }
-
-    // Handle regular ticket creation for other cases
-    if (parsedResponse.requires_escalation || 
-        parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
-        (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-      try {
-        await AutomatedTicketService.generateTicket({
-          messageId: context.messageId,
-          conversationId: context.conversationId,
-          analysis: parsedResponse,
-          customerName: context.userName,
-          platform: 'whatsapp',
-          messageContent: message,
-          context: context.knowledgeBase || ''
-        });
-      } catch (error) {
-        console.error('Error creating ticket:', error);
-      }
+    if (ticketResponse) {
+      return ticketResponse;
     }
 
     return parsedResponse.response;
@@ -207,84 +86,34 @@ async function generateGeminiResponse(message: string, context: any, aiSettings:
   if (!GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY is not set');
   }
-  
-  const intentDetectionPrompt = `
-You are an AI assistant responsible for analyzing user intents and determining when human intervention is needed.
 
-Intent Detection Guidelines:
-1. Always identify explicit requests for human agents
-2. Evaluate message urgency (high/medium/low)
-3. Detect support requests vs general queries
-4. Consider user frustration signals
-
-You must respond in the following JSON format:
-{
-  "intent": "HUMAN_AGENT_REQUEST" | "SUPPORT_REQUEST" | "ORDER_PLACEMENT" | "GENERAL_QUERY",
-  "confidence": 0.0-1.0,
-  "requires_escalation": boolean,
-  "escalation_reason": string | null,
-  "detected_entities": {
-    "product_mentions": string[],
-    "issue_type": string | null,
-    "urgency_level": "high" | "medium" | "low"
-  },
-  "response": string
-}`;
-
-  const knowledgeBaseContext = context ? `\nRelevant knowledge base context:\n${context}` : '';
-  const adminBehaviorPrompt = `\nTone: ${aiSettings.tone}\n${aiSettings.behaviour || ''}`;
+  const intentDetectionPrompt = generateGeminiIntentPrompt({
+    knowledgeBase: context.knowledgeBase,
+    tone: aiSettings.tone,
+    behaviour: aiSettings.behaviour
+  });
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${intentDetectionPrompt}${adminBehaviorPrompt}${knowledgeBaseContext}\n\nUser message: ${message}\n\nProvide your analysis and response in the specified JSON format:` }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          topP: 0.9,
-          topK: 40,
-          maxOutputTokens: 1000,
-        }
-      })
+    const parsedResponse = await GeminiHandler.generateResponse(
+      message,
+      intentDetectionPrompt,
+      GEMINI_API_KEY
+    );
+
+    const ticketResponse = await TicketHandler.handleTicketCreation(parsedResponse, {
+      messageId: context.messageId,
+      conversationId: context.conversationId,
+      userName: context.userName,
+      platform: 'whatsapp',
+      messageContent: message,
+      knowledgeBase: context.knowledgeBase
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to generate Gemini response');
+    if (ticketResponse) {
+      return ticketResponse;
     }
 
-    const data = await response.json();
-    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      throw new Error('Invalid response format from Gemini API');
-    }
-
-    const responseText = data.candidates[0].content.parts[0].text.trim();
-    
-    try {
-      // Parse the JSON response
-      const parsedResponse = JSON.parse(responseText);
-      console.log('Parsed LLM response:', parsedResponse);
-
-      // Store the analysis for ticket creation if needed
-      if (parsedResponse.requires_escalation || 
-          parsedResponse.intent === 'HUMAN_AGENT_REQUEST' ||
-          (parsedResponse.intent === 'SUPPORT_REQUEST' && parsedResponse.detected_entities.urgency_level === 'high')) {
-        console.log('Ticket creation may be needed:', parsedResponse);
-      }
-
-      // Return only the response part for the user
-      return parsedResponse.response;
-    } catch (parseError) {
-      console.error('Error parsing LLM response as JSON:', parseError);
-      return responseText;
-    }
+    return parsedResponse.response;
   } catch (error) {
     console.error('Error with Gemini API:', error);
     throw error;

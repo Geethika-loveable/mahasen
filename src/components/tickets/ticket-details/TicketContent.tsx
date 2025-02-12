@@ -1,13 +1,13 @@
 
 import { Ticket } from "@/types/ticket";
 
-interface TicketInfoProps {
+interface TicketContentProps {
   ticket: Ticket;
 }
 
-export const TicketInfo = ({ ticket }: TicketInfoProps) => {
+export const TicketContent = ({ ticket }: TicketContentProps) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-wrap gap-4">
         <div className="flex-1 min-w-[200px]">
           <h4 className="font-medium">Customer</h4>
@@ -33,13 +33,6 @@ export const TicketInfo = ({ ticket }: TicketInfoProps) => {
           <p className="whitespace-pre-wrap">{ticket.body}</p>
         </div>
       </div>
-
-      {ticket.context && (
-        <div className="space-y-2">
-          <h4 className="font-medium">Conversation Context</h4>
-          <p className="whitespace-pre-wrap">{ticket.context}</p>
-        </div>
-      )}
 
       {ticket.escalation_reason && (
         <div className="space-y-2">

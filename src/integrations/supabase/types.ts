@@ -261,6 +261,7 @@ export type Database = {
           assigned_to: string | null
           body: string
           confidence_score: number | null
+          confirmation_message_id: string | null
           context: string | null
           conversation_id: string | null
           created_at: string
@@ -270,8 +271,10 @@ export type Database = {
           intent_type: string | null
           last_updated_at: string | null
           message_id: string | null
+          order_status: string | null
           platform: Database["public"]["Enums"]["platform_type"]
           priority: string | null
+          product_info: Json | null
           status: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
@@ -280,6 +283,7 @@ export type Database = {
           assigned_to?: string | null
           body: string
           confidence_score?: number | null
+          confirmation_message_id?: string | null
           context?: string | null
           conversation_id?: string | null
           created_at?: string
@@ -289,8 +293,10 @@ export type Database = {
           intent_type?: string | null
           last_updated_at?: string | null
           message_id?: string | null
+          order_status?: string | null
           platform: Database["public"]["Enums"]["platform_type"]
           priority?: string | null
+          product_info?: Json | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title: string
           type: string
@@ -299,6 +305,7 @@ export type Database = {
           assigned_to?: string | null
           body?: string
           confidence_score?: number | null
+          confirmation_message_id?: string | null
           context?: string | null
           conversation_id?: string | null
           created_at?: string
@@ -308,8 +315,10 @@ export type Database = {
           intent_type?: string | null
           last_updated_at?: string | null
           message_id?: string | null
+          order_status?: string | null
           platform?: Database["public"]["Enums"]["platform_type"]
           priority?: string | null
+          product_info?: Json | null
           status?: Database["public"]["Enums"]["ticket_status"]
           title?: string
           type?: string
@@ -330,6 +339,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          ui_mode: Database["public"]["Enums"]["ui_mode"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ui_mode?: Database["public"]["Enums"]["ui_mode"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ui_mode?: Database["public"]["Enums"]["ui_mode"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       webhook_errors: {
         Row: {
@@ -390,6 +423,7 @@ export type Database = {
       message_status: "sent" | "received"
       platform_type: "whatsapp" | "facebook" | "instagram"
       ticket_status: "New" | "In Progress" | "Escalated" | "Completed"
+      ui_mode: "dev" | "full"
     }
     CompositeTypes: {
       [_ in never]: never
